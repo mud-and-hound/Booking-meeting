@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Meeting Room Booking System v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+<style>
+:root{
+  --bg:#F4F6FB;--surface:#FFFFFF;--surface-2:#F8FAFC;--surface-3:#F1F5F9;
+  --text:#1E293B;--text-muted:#64748B;--text-faint:#94A3B8;
+  --border:#E7EBF1;--border-strong:#D7DEE8;
+  --primary:#2563EB;--primary-600:#1D4ED8;--primary-soft:#EFF4FF;
+  --sb-from:#0B1437;--sb-to:#16224F;--sb-text:#9AA6C2;--sb-active:#2563EB;--sb-hover:rgba(255,255,255,.06);
+  --green:#10B981;--green-bg:#E9FBF2;--green-tx:#0B8457;
+  --red:#EF4444;--red-bg:#FEEDED;--red-tx:#C73A3A;
+  --amber:#F59E0B;--amber-bg:#FFF6E6;--amber-tx:#B97309;
+  --info:#3B82F6;--info-bg:#EAF2FE;--info-tx:#2563EB;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+  --shadow:0 2px 8px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --shadow-lg:0 12px 32px rgba(15,23,42,.14);
+  --radius:14px;--radius-sm:10px;
+}
+[data-theme="dark"]{
+  --bg:#0A0F1C;--surface:#141B2C;--surface-2:#1A2336;--surface-3:#212C42;
+  --text:#E6ECF7;--text-muted:#9AA7C0;--text-faint:#6B7A99;
+  --border:#26324C;--border-strong:#33415F;
+  --primary:#3B82F6;--primary-600:#2563EB;--primary-soft:#1A2747;
+  --sb-from:#05080F;--sb-to:#0C1428;--sb-text:#8492B0;--sb-active:#3B82F6;--sb-hover:rgba(255,255,255,.05);
+  --green:#34D399;--green-bg:#10271F;--green-tx:#5EEAB4;
+  --red:#F87171;--red-bg:#2B1717;--red-tx:#FCA5A5;
+  --amber:#FBBF24;--amber-bg:#2A2110;--amber-tx:#FCD34D;
+  --info:#60A5FA;--info-bg:#16243F;--info-tx:#93C5FD;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow:0 2px 10px rgba(0,0,0,.45);--shadow-lg:0 14px 40px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%}
+body{font-family:'Prompt',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;font-size:14px;transition:background .25s,color .25s}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:8px}
+
+.app{display:flex;height:100vh;overflow:hidden;background:var(--bg)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.scroll{flex:1;overflow-y:auto;padding:22px 26px 90px}
+@media(max-width:680px){.scroll{padding:16px 14px 92px}}
+
+/* sidebar */
+.sidebar{width:236px;flex-shrink:0;background:linear-gradient(170deg,var(--sb-from),var(--sb-to));display:flex;flex-direction:column;color:var(--sb-text);padding:18px 14px;transition:background .25s}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px 18px}
+.brand-logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#3B82F6,#1E40AF);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;box-shadow:0 4px 14px rgba(37,99,235,.5)}
+.brand-name{color:#fff;font-weight:600;font-size:14px;line-height:1.2;letter-spacing:.3px}
+.brand-sub{font-size:10.5px;color:#7E8CB0;letter-spacing:.6px;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:11px;font-size:13.5px;color:var(--sb-text);transition:.18s}
+.nav-item:hover{background:var(--sb-hover);color:#dfe6f5}
+.nav-item.active{background:var(--sb-active);color:#fff;font-weight:500;box-shadow:0 6px 18px rgba(37,99,235,.4)}
+.nav-item .ic{flex-shrink:0;opacity:.92}.nav-item.active .ic{opacity:1}
+.sb-user{display:flex;align-items:center;gap:11px;padding:10px 9px;border-radius:12px;background:rgba(255,255,255,.05);margin-top:8px;cursor:pointer;transition:.18s}
+.sb-user:hover{background:rgba(255,255,255,.09)}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#60A5FA,#2563EB);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;flex-shrink:0}
+.sb-user-name{color:#fff;font-size:13px;font-weight:500;line-height:1.1}
+.sb-user-role{font-size:11px;color:#7E8CB0;margin-top:2px;display:flex;align-items:center;gap:4px}
+@media(max-width:880px){.sidebar{display:none}}
+
+/* topbar */
+.topbar{display:flex;align-items:center;gap:14px;padding:15px 26px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+@media(max-width:680px){.topbar{padding:13px 14px}}
+.topbar h1{font-size:18px;font-weight:600;white-space:nowrap}.topbar h1 .wave{font-weight:400}
+.search{flex:1;max-width:430px;display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:9px 13px;color:var(--text-muted)}
+.search input{flex:1;border:none;background:none;outline:none;color:var(--text);font-size:13px}
+.search input::placeholder{color:var(--text-faint)}
+.topbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);transition:.16s;position:relative}
+.icon-btn:hover{color:var(--primary);border-color:var(--primary)}.icon-btn:active{transform:scale(.94)}
+.badge-dot{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface)}
+
+.section-title{font-size:15.5px;font-weight:600;margin:6px 0 13px;display:flex;align-items:center;gap:8px}
+.link{color:var(--primary);font-size:12.5px;font-weight:500;cursor:pointer}.link:hover{text-decoration:underline}
+.grid{display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.pad{padding:18px}
+.row-between{display:flex;align-items:center;justify-content:space-between}
+.muted{color:var(--text-muted)}
+.empty{color:var(--text-muted);font-size:13px;padding:22px 4px;text-align:center}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge .d{width:6px;height:6px;border-radius:50%}
+.b-green{background:var(--green-bg);color:var(--green-tx)}.b-green .d{background:var(--green)}
+.b-info{background:var(--info-bg);color:var(--info-tx)}.b-info .d{background:var(--info)}
+.b-amber{background:var(--amber-bg);color:var(--amber-tx)}.b-amber .d{background:var(--amber)}
+.b-red{background:var(--red-bg);color:var(--red-tx)}.b-red .d{background:var(--red)}
+.b-gray{background:var(--surface-3);color:var(--text-muted)}.b-gray .d{background:var(--text-faint)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 17px;border-radius:50px;font-size:13px;font-weight:500;transition:.16s;white-space:nowrap}
+.btn:active{transform:scale(.95)}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.32)}.btn-primary:hover{background:var(--primary-600)}
+.btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{filter:brightness(1.06)}
+.btn-sm{padding:7px 13px;font-size:12px}.btn-block{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.stat{border-radius:13px;padding:15px 16px;position:relative;overflow:hidden}
+.stat .lbl{font-size:12px;color:var(--text-muted)}.stat .val{font-size:27px;font-weight:600;line-height:1.1;margin-top:4px}
+.stat .unit{font-size:11px;color:var(--text-faint);margin-top:1px}.stat .si{position:absolute;top:13px;right:13px;opacity:.85}
+.s-blue{background:var(--info-bg)}.s-blue .val{color:var(--info-tx)}
+.s-green{background:var(--green-bg)}.s-green .val{color:var(--green-tx)}
+.s-amber{background:var(--amber-bg)}.s-amber .val{color:var(--amber-tx)}
+.s-red{background:var(--red-bg)}.s-red .val{color:var(--red-tx)}
+
+.room-gfx{height:118px;border-radius:11px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.room-gfx.sm{height:84px}.room-gfx .gxbadge{position:absolute;top:9px;left:9px;z-index:2}
+.room-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px;box-shadow:var(--shadow-sm);transition:.18s}
+.room-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.room-card h4{font-size:14.5px;font-weight:600;margin:11px 2px 7px}
+.meta-row{display:flex;align-items:center;gap:6px;color:var(--text-muted);font-size:12px;margin:0 2px 9px}
+.eq-row{display:flex;flex-wrap:wrap;gap:5px;margin:0 2px 12px}
+.eq{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);padding:3px 7px;border-radius:7px}
+
+.li{display:flex;align-items:center;gap:13px;padding:13px 4px;border-bottom:1px solid var(--border)}
+.li:last-child{border-bottom:none}
+.li-time{font-size:12.5px;font-weight:600;width:96px;flex-shrink:0;line-height:1.35}
+.li-time small{display:block;font-size:10.5px;color:var(--text-faint);font-weight:400}
+.li-body{flex:1;min-width:0}.li-title{font-size:13.5px;font-weight:500}.li-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+
+.announce{background:var(--info-bg);border:1px solid var(--border);border-radius:11px;padding:14px}
+.announce h5{font-size:13px;font-weight:600;margin-bottom:6px}.announce p{font-size:12px;color:var(--text-muted);line-height:1.6}
+
+/* chat */
+.chat-wrap{max-width:660px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+.chat-head{display:flex;align-items:center;gap:11px;padding:14px 4px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.bot-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#60A5FA,#2563EB);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.chat-body{flex:1;overflow-y:auto;padding:14px 4px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:10px;max-width:90%}.msg.bot{align-self:flex-start}.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.bubble{padding:11px 15px;border-radius:16px;font-size:13.5px;line-height:1.55}
+.msg.bot .bubble{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:5px;box-shadow:var(--shadow-sm)}
+.msg.me .bubble{background:var(--primary);color:#fff;border-bottom-right-radius:5px;box-shadow:0 4px 14px rgba(37,99,235,.3)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:3px}
+.chip{padding:8px 14px;border-radius:50px;border:1.5px solid var(--primary);color:var(--primary);background:var(--surface);font-size:12.5px;font-weight:500;transition:.16s}
+.chip:hover{background:var(--primary-soft)}.chip:active{transform:scale(.95)}
+.chip.soft{border-color:var(--border-strong);color:var(--text-muted)}
+.typing{display:flex;gap:4px;padding:13px 16px}.typing i{width:7px;height:7px;border-radius:50%;background:var(--text-faint);animation:bd 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bd{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+.gap-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;background:var(--green-bg);color:var(--green-tx);border:1px solid var(--green);font-size:12px;font-weight:500;cursor:pointer}
+.gap-chip:hover{filter:brightness(1.04)}.gap-chip:active{transform:scale(.96)}
+.chat-input{display:flex;align-items:center;gap:9px;padding:10px 11px;background:var(--surface);border:1px solid var(--border);border-radius:50px;margin-top:8px}
+.chat-input input{flex:1;border:none;background:none;outline:none;font-size:13px;color:var(--text);padding-left:6px}
+.send-btn{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.16s}
+.send-btn:active{transform:scale(.9)}.send-btn:disabled{opacity:.5}
+
+/* calendar toolbar */
+.cal-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
+.seg button{padding:6px 15px;border-radius:8px;font-size:12.5px;color:var(--text-muted);font-weight:500;transition:.15s}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.nav-arrow{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+.nav-arrow:hover{color:var(--primary);border-color:var(--primary)}
+
+/* timeline (day) */
+.timeline{overflow-x:auto}.tl-inner{min-width:1000px}
+.tl-head{display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:4px}
+.tl-hours{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-faint);padding:0 2px}
+.tl-row{display:grid;grid-template-columns:150px 1fr;align-items:center;min-height:60px;border-bottom:1px solid var(--border)}
+.tl-room{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;padding-right:10px}
+.tl-room small{font-size:10.5px;color:var(--text-faint);font-weight:400}
+.tl-room-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.tl-track{position:relative;height:44px}
+.tl-grid{position:absolute;inset:0;display:flex}.tl-grid span{flex:1;border-left:1px dashed var(--border)}
+.tl-block{position:absolute;top:4px;height:36px;border-radius:8px;padding:5px 9px;font-size:10.5px;font-weight:500;color:#fff;overflow:hidden;cursor:pointer;transition:.15s;box-shadow:var(--shadow-sm);z-index:2}
+.tl-block:hover{filter:brightness(1.08);transform:translateY(-1px)}.tl-block small{display:block;font-size:9px;opacity:.92;font-weight:400}
+.tl-gap{position:absolute;top:6px;height:32px;border-radius:7px;border:1.5px dashed var(--green);background:var(--green-bg);color:var(--green-tx);font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.85;z-index:1;transition:.15s}
+.tl-gap:hover{opacity:1}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;font-size:11.5px;color:var(--text-muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.legend i.dash{background:var(--green-bg);border:1.5px dashed var(--green)}
+
+/* sheet (month x time per room) */
+.room-pills{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+.room-pill{display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:50px;border:1px solid var(--border);background:var(--surface-2);font-size:12.5px;font-weight:500;white-space:nowrap;color:var(--text-muted);transition:.15s}
+.room-pill .dotc{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.room-pill.on{border-color:var(--primary);color:var(--text);background:var(--primary-soft)}
+.room-pill:active{transform:scale(.96)}
+.sheet{overflow-x:auto}.sheet-inner{min-width:920px}
+.sheet-head{display:grid;grid-template-columns:104px 1fr;border-bottom:1.5px solid var(--border-strong);position:sticky;top:0;background:var(--surface);z-index:3}
+.sheet-hours span{text-align:center;font-size:10.5px;color:var(--text-muted);padding:9px 2px;border-left:1px solid var(--border)}
+.sheet-weekhdr{font-size:11px;color:var(--text-faint);font-weight:500;padding:9px 6px 3px}
+.sheet-row{display:grid;grid-template-columns:104px 1fr;min-height:44px;border-bottom:1px solid var(--border)}
+.sheet-row.holi{background:repeating-linear-gradient(45deg,transparent,transparent 7px,var(--surface-3) 7px,var(--surface-3) 14px)}
+.sheet-day{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:0 9px;border-right:1px solid var(--border)}
+.sheet-day small{color:var(--text-faint);font-weight:400}.sheet-day.today{color:var(--primary)}
+.sheet-track{position:relative}
+.sheet-grid{position:absolute;inset:0;display:grid}.sheet-grid span{border-left:1px solid var(--border)}
+.sheet-empty{position:absolute;inset:0;z-index:1;cursor:pointer}
+.sheet-block{position:absolute;top:6px;height:32px;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:500;color:#fff;overflow:hidden;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow-sm);z-index:2;line-height:1.25}
+.sheet-block:hover{filter:brightness(1.08);z-index:4}.sheet-block small{font-size:8.5px;opacity:.9}
+
+/* week */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+@media(max-width:880px){.week-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.week-grid{grid-template-columns:repeat(2,1fr)}}
+.wcol{background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:9px;min-height:120px}
+.wcol.today{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+.wc-head{text-align:center;font-size:11px;color:var(--text-muted);padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:7px}
+.wc-head b{display:block;font-size:17px;color:var(--text);font-weight:600}
+.wc-item{font-size:10.5px;padding:5px 7px;border-radius:7px;color:#fff;margin-bottom:5px;cursor:pointer;line-height:1.3}
+.wc-item small{display:block;opacity:.9;font-size:9px}
+.wc-empty{font-size:10px;color:var(--text-faint);text-align:center;padding:8px 0}
+
+/* month */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.mh{text-align:center;font-size:11px;color:var(--text-muted);font-weight:500;padding:4px 0}
+.mcell{min-height:78px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:6px 7px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:3px}
+.mcell:hover{border-color:var(--primary)}.mcell.muted-cell{opacity:.4}
+.mcell.today{border-color:var(--primary);background:var(--primary-soft)}
+.mc-date{font-size:12.5px;font-weight:600}
+.mc-dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto}
+.mc-dot{width:7px;height:7px;border-radius:50%}
+.mc-count{font-size:9.5px;color:var(--text-muted);margin-top:2px}
+@media(max-width:560px){.mcell{min-height:58px;padding:4px}.mc-date{font-size:11px}}
+
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:8px 15px;border-radius:50px;font-size:12.5px;font-weight:500;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);transition:.15s}
+.tab.on{background:var(--primary);color:#fff;border-color:var(--primary)}.tab:active{transform:scale(.95)}
+
+.checkin-bar{display:flex;align-items:center;gap:11px;background:var(--info-bg);border:1px solid var(--info);border-radius:11px;padding:11px 14px;margin-bottom:14px;flex-wrap:wrap}
+.countdown{font-variant-numeric:tabular-nums;font-weight:600;color:var(--amber-tx);background:var(--amber-bg);padding:3px 10px;border-radius:8px;font-size:12.5px}
+
+/* form */
+.form-wrap{max-width:620px;margin:0 auto}
+.form-grid{display:grid;gap:16px}
+.field label{display:block;font-size:12.5px;font-weight:500;margin-bottom:7px;color:var(--text)}
+.field label .req{color:var(--red);margin-left:2px}
+.inp{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13.5px;outline:none;transition:.15s}
+.inp:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+select.inp{cursor:pointer}
+.time-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+@media(max-width:520px){.time-row{grid-template-columns:1fr 1fr}}
+.dur-pill{padding:11px 14px;border-radius:10px;background:var(--primary-soft);color:var(--primary);font-weight:600;font-size:13px;white-space:nowrap;text-align:center;align-self:end;height:43px;display:flex;align-items:center;justify-content:center}
+.gap-help{background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:10px;padding:11px 13px}
+.gap-help .gh-title{font-size:11.5px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.gap-help .chips{margin-top:0}
+.auto-field{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.conflict-warn{display:flex;align-items:flex-start;gap:8px;background:var(--red-bg);border:1px solid var(--red);border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--red-tx);line-height:1.5}
+
+/* settings */
+.set-row{display:flex;align-items:center;gap:13px;padding:15px 4px;border-bottom:1px solid var(--border)}
+.set-row:last-child{border-bottom:none}
+.set-ic{width:38px;height:38px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0}
+.set-body{flex:1}.set-body .t{font-size:13.5px;font-weight:500}.set-body .d{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+.switch{width:46px;height:26px;border-radius:50px;background:var(--border-strong);position:relative;transition:.2s;flex-shrink:0;cursor:pointer}
+.switch.on{background:var(--primary)}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch.on::after{left:23px}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(8,12,22,.55);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:18px;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{background:var(--surface);border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:pop .22s}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.modal-gfx{height:155px;position:relative;display:flex;align-items:center;justify-content:center}
+.modal-x{position:absolute;top:13px;right:13px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;z-index:3}
+.modal-x:hover{background:rgba(255,255,255,.32)}
+.detail-line{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.detail-line:last-of-type{border-bottom:none}.detail-line .ic{color:var(--text-faint);flex-shrink:0}
+.detail-line .dl-label{color:var(--text-muted);width:74px;flex-shrink:0;font-size:12.5px}
+.modal-head{padding:18px 20px 0;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+.perm-note{display:flex;align-items:center;gap:8px;background:var(--amber-bg);border:1px solid var(--amber);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--amber-tx);margin-top:14px;line-height:1.45}
+@media(max-width:680px){.modal{max-width:none;border-radius:18px 18px 0 0;position:fixed;bottom:0;max-height:92vh;animation:sheet .26s}@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}}
+
+.mobilenav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:40;justify-content:space-around}
+.mn-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--text-faint);padding:5px 8px;border-radius:10px;transition:.15s;flex:1}
+.mn-item.active{color:var(--primary)}.mn-item:active{transform:scale(.92)}
+@media(max-width:880px){.mobilenav{display:flex}}
+
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:80;background:var(--text);color:var(--bg);padding:11px 20px;border-radius:50px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:9px;animation:toastIn .28s;max-width:90vw}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-14px)}to{opacity:1;transform:translateX(-50%)}}
+.toast.ok .ti{color:var(--green)}.toast.warn .ti{color:var(--amber)}.toast.err .ti{color:var(--red)}
+
+.cols-3{grid-template-columns:repeat(3,1fr)}.cols-4{grid-template-columns:repeat(4,1fr)}
+.dash-top{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:16px}
+@media(max-width:1180px){.dash-top{grid-template-columns:1fr 1fr}.dash-top>div:nth-child(3){grid-column:span 2}}
+@media(max-width:760px){.dash-top{grid-template-columns:1fr}.dash-top>div:nth-child(3){grid-column:auto}}
+@media(max-width:860px){.cols-4{grid-template-columns:repeat(2,1fr)}.cols-3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.cols-4,.cols-3{grid-template-columns:1fr}}
+.hide-mobile{display:flex}@media(max-width:680px){.hide-mobile{display:none}}
+.rep-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:880px){.rep-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm)}
+.kpi .lbl{font-size:12px;color:var(--text-muted)}.kpi .val{font-size:26px;font-weight:600;margin-top:4px}.kpi .unit{font-size:11px;color:var(--text-faint)}
+.chart-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:880px){.chart-2{grid-template-columns:1fr}}
+.donut-legend{display:flex;flex-direction:column;gap:9px}
+.dl-item{display:flex;align-items:center;gap:9px;font-size:12.5px}.dl-item i{width:11px;height:11px;border-radius:3px}.dl-item .pct{margin-left:auto;font-weight:600;color:var(--text)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11.5px;color:var(--text-muted);font-weight:500;padding:9px 8px;border-bottom:1px solid var(--border)}
+.tbl td{font-size:13px;padding:11px 8px;border-bottom:1px solid var(--border)}.tbl tr:last-child td{border-bottom:none}
+.rank{width:24px;height:24px;border-radius:7px;background:var(--primary-soft);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:12px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useMemo}=React;
+
+/* ============================================================
+   🔑 ใส่ API KEY ตรงนี้ถ้าจะ hardcode (สะดวก ไม่ต้องพิมพ์ทุกครั้ง)
+   - วาง key เช่น "AIza..." ลงใน MY_AI_KEY แล้วบอทจะต่อให้อัตโนมัติ
+   - ปล่อยว่าง "" = ไปใส่เองในหน้าตั้งค่าแทน
+   - ⚠️⚠️ ห้าม deploy เว็บสาธารณะ หรือ push ขึ้น GitHub พร้อม key นี้
+            (บอทสแกนเจอ key แล้วเอาไปใช้จนโดนแบน/บิลบานได้ในไม่กี่นาที)
+   - ใช้เฉพาะรันไฟล์ในเครื่องตัวเองเพื่อทดลองเท่านั้น
+   ============================================================ */
+const MY_AI_KEY = "AQ.Ab8RN6LCvllXh8qV33JrsbpbOc5T0ofrUHT4ky1Z_OX6PacoUg";  // <-- key ของเต้ (ทดสอบแล้วใช้ได้)
+const MY_AI_PROVIDER = "gemini"; // gemini | openai | groq
+
+
+/* ====== ICONS ====== */
+function Icon({name,size=18,sw=1.8}){
+  const p={width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:sw,strokeLinecap:"round",strokeLinejoin:"round",className:"ic"};
+  const M={
+    home:<><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></>,
+    calendar:<><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></>,
+    mine:<><path d="M4 5h12M4 10h16M4 15h10M4 20h13"/></>,
+    room:<><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></>,
+    report:<><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></>,
+    settings:<><circle cx="12" cy="12" r="3"/><path d="M19.4 13a1.6 1.6 0 0 0 .3 1.8 2 2 0 1 1-2.8 2.8 1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.6-1.2 2 2 0 1 1-2.8-2.8A1.6 1.6 0 0 0 3 13.4a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.2-2.7 2 2 0 1 1 2.8-2.8A1.6 1.6 0 0 0 10.6 3a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.7 1.2 2 2 0 1 1 2.8 2.8A1.6 1.6 0 0 0 19.4 11"/></>,
+    bell:<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></>,
+    search:<><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></>,
+    expand:<><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></>,
+    users:<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></>,
+    tv:<><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M8 21h8M12 19v2"/></>,
+    projector:<><rect x="3" y="8" width="18" height="9" rx="2"/><circle cx="9" cy="12.5" r="2.2"/><path d="M15 11h3M6 8V6h3"/></>,
+    video:<><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8z"/></>,
+    board:<><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M12 17v3M8 20h8"/></>,
+    clock:<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    edit:<><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></>,
+    trash:<><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/></>,
+    check:<><path d="M20 6 9 17l-5-5"/></>,
+    checkcircle:<><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></>,
+    x:<><path d="M18 6 6 18M6 6l12 12"/></>,
+    plus:<><path d="M12 5v14M5 12h14"/></>,
+    cleft:<><path d="m15 18-6-6 6-6"/></>,cright:<><path d="m9 18 6-6-6-6"/></>,cdown:<><path d="m6 9 6 6 6-6"/></>,
+    sun:<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></>,
+    moon:<><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></>,
+    bot:<><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V5M9 13h.01M15 13h.01M2 13v2M22 13v2"/><circle cx="12" cy="4" r="1.5"/></>,
+    send:<><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></>,
+    sparkle:<><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></>,
+    note:<><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></>,
+    megaphone:<><path d="M3 11v2a1 1 0 0 0 1 1h2l8 5V5L6 10H4a1 1 0 0 0-1 1z"/><path d="M18 8a4 4 0 0 1 0 8"/></>,
+    user:<><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></>,
+    link:<><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></>,
+    phone:<><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></>,
+    building:<><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M9 16h.01M15 16h.01"/></>,
+    shield:<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>,
+    swap:<><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></>,
+    save:<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></>,
+    warn:<><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></>,
+  };
+  return <svg {...p}>{M[name]||null}</svg>;
+}
+
+/* ====== DATA ====== */
+const ROOMS=[
+  {id:'A',name:'MUD 1',cap:12,eq:['tv','projector','board'],g:['#3B82F6','#1D4ED8']},
+  {id:'B',name:'MUD 2',cap:20,eq:['tv','video','board'],g:['#0EA5A5','#0F766E']},
+  {id:'C',name:'MUD 3',cap:8,eq:['tv','board'],g:['#8B5CF6','#6D28D9']},
+  {id:'BR',name:'Board Room',cap:16,eq:['tv','video','board'],g:['#334155','#0F172A']},
+  {id:'D',name:'MUD 4',cap:6,eq:['tv','board'],g:['#F59E0B','#D97706']},
+  {id:'TR',name:'Training Room',cap:30,eq:['tv','projector','video'],g:['#EC4899','#BE185D']},
+];
+const EQ_LABEL={tv:'TV',projector:'Projector',video:'Video Conf',board:'Whiteboard'};
+const ROOM=id=>ROOMS.find(r=>r.id===id);
+const TODAY='2026-06-18';
+const DAY_START=8*60, DAY_END=20*60;
+
+let _bid=100;
+const seed=()=>[
+  {id:++_bid,room:'A',date:'2026-06-18',s:'09:00',e:'10:30',title:'Weekly Team Meeting',att:12,owner:'u1',by:'เต้ วราการ',link:'https://zoom.us/j/123',status:'in-use',checkedIn:false,autoRelease:true},
+  {id:++_bid,room:'A',date:'2026-06-18',s:'13:00',e:'14:30',title:'Planning',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
+  {id:++_bid,room:'B',date:'2026-06-18',s:'10:00',e:'11:30',title:'Marketing Discussion',att:14,owner:'u3',by:'วราภรณ์',status:'confirmed'},
+  {id:++_bid,room:'B',date:'2026-06-18',s:'15:00',e:'16:30',title:'Project Review',att:10,owner:'u4',by:'ธนกร',status:'pending'},
+  {id:++_bid,room:'C',date:'2026-06-18',s:'09:00',e:'10:00',title:'Interview',att:3,owner:'u5',by:'HR',status:'cancelled'},
+  {id:++_bid,room:'BR',date:'2026-06-18',s:'13:30',e:'15:00',title:'Project Update',att:12,owner:'u1',by:'เต้ วราการ',link:'https://zoom.us/j/456',status:'confirmed'},
+  {id:++_bid,room:'TR',date:'2026-06-18',s:'09:30',e:'12:00',title:'New Hire Onboarding',att:25,owner:'u6',by:'L&D',status:'confirmed'},
+  // other days for week/month
+  {id:++_bid,room:'A',date:'2026-06-19',s:'10:00',e:'11:00',title:'Sprint Review',att:9,owner:'u1',by:'เต้ วราการ',status:'confirmed'},
+  {id:++_bid,room:'B',date:'2026-06-19',s:'14:00',e:'15:30',title:'Vendor Call',att:5,owner:'u3',by:'วราภรณ์',status:'pending'},
+  {id:++_bid,room:'BR',date:'2026-06-17',s:'09:00',e:'10:30',title:'Exec Sync',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-20',s:'09:00',e:'10:00',title:'1:1',att:2,owner:'u1',by:'เต้ วราการ',status:'confirmed'},
+  {id:++_bid,room:'C',date:'2026-06-23',s:'13:00',e:'14:00',title:'Design Crit',att:6,owner:'u3',by:'วราภรณ์',status:'confirmed'},
+  {id:++_bid,room:'B',date:'2026-06-25',s:'10:00',e:'12:00',title:'All Hands',att:30,owner:'u6',by:'L&D',status:'confirmed'},
+  // MUD 1 (room A) — เลียนแบบตารางจริงเดือน มิ.ย. 2569
+  {id:++_bid,room:'A',date:'2026-06-02',s:'12:00',e:'15:00',title:'DD HD Meeting',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-08',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-09',s:'13:00',e:'14:00',title:'DD HD Meeting',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-10',s:'09:00',e:'11:00',title:'Brand Meet (NUT GHF)',att:10,owner:'u3',by:'NUT',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-11',s:'10:00',e:'11:00',title:'DD Meeting',att:5,owner:'u1',by:'เต้ วราการ',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-15',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-17',s:'09:00',e:'11:00',title:'Brand Meet (NUT GHF)',att:10,owner:'u3',by:'NUT',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-22',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-24',s:'13:00',e:'15:00',title:'ABP Training: CRM',att:12,owner:'u6',by:'L&D',status:'confirmed'},
+  {id:++_bid,room:'A',date:'2026-06-29',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
+  {id:++_bid,room:'BR',date:'2026-06-09',s:'14:00',e:'15:00',title:'MUD BOD',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
+  {id:++_bid,room:'B',date:'2026-06-12',s:'14:00',e:'16:00',title:'Salary HR',att:6,owner:'u4',by:'HR',status:'confirmed'},
+];
+
+const STATUS={
+  confirmed:{label:'ยืนยันแล้ว',cls:'b-green',bar:'var(--green)'},
+  'in-use':{label:'กำลังใช้งาน',cls:'b-info',bar:'var(--info)'},
+  pending:{label:'รออนุมัติ',cls:'b-amber',bar:'var(--amber)'},
+  cancelled:{label:'ยกเลิก',cls:'b-red',bar:'var(--red)'},
+  released:{label:'ปล่อยอัตโนมัติ',cls:'b-gray',bar:'var(--text-faint)'},
+  draft:{label:'ร่าง',cls:'b-gray',bar:'var(--text-faint)'},
+};
+const ACTIVE=['confirmed','in-use','pending'];
+
+/* ====== HELPERS ====== */
+const t2m=t=>{const[h,m]=t.split(':').map(Number);return h*60+m;};
+const m2t=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const overlap=(s1,e1,s2,e2)=>t2m(s1)<t2m(e2)&&t2m(s2)<t2m(e1);
+const durText=(s,e)=>{let d=t2m(e)-t2m(s);if(d<=0)return'—';const h=Math.floor(d/60),m=d%60;return(h?h+' ชม. ':'')+(m?m+' นาที':(h?'':'0 นาที'));};
+const roomFree=(roomId,date,s,e,bookings,ignoreId)=>!bookings.some(b=>b.id!==ignoreId&&b.room===roomId&&b.date===date&&ACTIVE.includes(b.status)&&overlap(s,e,b.s,b.e));
+function freeGaps(roomId,date,bookings){
+  const busy=bookings.filter(b=>b.room===roomId&&b.date===date&&ACTIVE.includes(b.status)).map(b=>[t2m(b.s),t2m(b.e)]).sort((a,b)=>a[0]-b[0]);
+  const gaps=[];let cur=DAY_START;
+  for(const[s,e]of busy){if(s>cur)gaps.push([cur,s]);cur=Math.max(cur,e);}
+  if(cur<DAY_END)gaps.push([cur,DAY_END]);
+  return gaps.map(([s,e])=>({s:m2t(s),e:m2t(e)}));
+}
+const TH_MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const TH_MONTHS_F=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TH_DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const parseISO=iso=>{const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);};
+const toISO=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+const thFull=iso=>{const d=parseISO(iso);return d.getDate()+' '+TH_MONTHS_F[d.getMonth()]+' '+(d.getFullYear()+543);};
+const thShort=iso=>{const d=parseISO(iso);return d.getDate()+' '+TH_MONTHS[d.getMonth()]+' '+(d.getFullYear()+543);};
+const addDays=(iso,n)=>{const d=parseISO(iso);d.setDate(d.getDate()+n);return toISO(d);};
+const startOfWeek=iso=>addDays(iso,-parseISO(iso).getDay());
+
+/* ====== ROOM GFX ====== */
+function RoomGfx({room,cls='',badge}){
+  return(
+    <div className={"room-gfx "+cls} style={{background:`linear-gradient(135deg,${room.g[0]},${room.g[1]})`}}>
+      {badge&&<div className="gxbadge">{badge}</div>}
+      <svg width="118" height="60" viewBox="0 0 118 60" fill="none">
+        <rect x="14" y="40" width="90" height="9" rx="4.5" fill="rgba(255,255,255,.92)"/>
+        <rect x="24" y="49" width="5" height="8" rx="2" fill="rgba(255,255,255,.55)"/><rect x="89" y="49" width="5" height="8" rx="2" fill="rgba(255,255,255,.55)"/>
+        <circle cx="28" cy="34" r="5" fill="rgba(255,255,255,.85)"/><circle cx="46" cy="32" r="5" fill="rgba(255,255,255,.85)"/>
+        <circle cx="72" cy="32" r="5" fill="rgba(255,255,255,.85)"/><circle cx="90" cy="34" r="5" fill="rgba(255,255,255,.85)"/>
+        <rect x="40" y="8" width="38" height="20" rx="3" fill="rgba(255,255,255,.25)" stroke="rgba(255,255,255,.7)" strokeWidth="1.5"/>
+        <path d="M48 18h22M48 22h14" stroke="rgba(255,255,255,.8)" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    </div>
+  );
+}
+
+/* ====== SIDEBAR / NAV ====== */
+const NAV=[
+  {id:'home',label:'หน้าหลัก',icon:'home'},
+  {id:'form',label:'จองห้อง',icon:'plus'},
+  {id:'book',label:'ผู้ช่วย AI',icon:'bot'},
+  {id:'calendar',label:'ปฏิทิน',icon:'calendar'},
+  {id:'mine',label:'การจองของฉัน',icon:'mine'},
+  {id:'rooms',label:'ห้องประชุม',icon:'room'},
+  {id:'reports',label:'รายงาน',icon:'report'},
+  {id:'settings',label:'ตั้งค่า',icon:'settings'},
+];
+function Sidebar({page,go,user,openProfile}){
+  return(
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-logo"><Icon name="calendar" size={20}/></div>
+        <div><div className="brand-name">MEETING ROOM</div><div className="brand-sub">BOOKING SYSTEM</div></div>
+      </div>
+      <nav className="nav">
+        {NAV.map(n=><button key={n.id} className={"nav-item"+(page===n.id?" active":"")} onClick={()=>go(n.id)}><Icon name={n.icon} size={18}/><span>{n.label}</span></button>)}
+      </nav>
+      <div className="sb-user" onClick={openProfile}>
+        <div className="avatar">{user.nick[0]}</div>
+        <div><div className="sb-user-name">{user.name}</div><div className="sb-user-role">{user.dept}{user.isAdmin&&<><Icon name="shield" size={11}/>Admin</>}</div></div>
+      </div>
+    </aside>
+  );
+}
+function MobileNav({page,go}){
+  const items=[NAV[0],NAV[1],NAV[2],NAV[3],NAV[4]];
+  return(<nav className="mobilenav">{items.map(n=><button key={n.id} className={"mn-item"+(page===n.id?" active":"")} onClick={()=>go(n.id)}><Icon name={n.icon} size={21}/><span>{n.label}</span></button>)}</nav>);
+}
+
+const TITLES={home:'',form:'จองห้องประชุม',book:'ผู้ช่วย AI',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
+function Topbar({page,dark,setDark,search,setSearch,user}){
+  return(
+    <header className="topbar">
+      {page==='home'?<h1>สวัสดีครับ, {user.name} <span className="wave">👋</span></h1>:<h1>{TITLES[page]}</h1>}
+      {page==='home'&&<div className="search hide-mobile"><Icon name="search" size={16}/><input placeholder="ค้นหาห้องประชุม, อาคาร หรืออุปกรณ์" value={search} onChange={e=>setSearch(e.target.value)}/></div>}
+      <div className="topbar-actions">
+        <button className="icon-btn" onClick={()=>setDark(d=>!d)} title="สลับธีม"><Icon name={dark?'sun':'moon'} size={18}/></button>
+        <button className="icon-btn" title="แจ้งเตือน"><Icon name="bell" size={18}/><span className="badge-dot">3</span></button>
+        <button className="icon-btn hide-mobile" title="เต็มจอ"><Icon name="expand" size={17}/></button>
+      </div>
+    </header>
+  );
+}
+
+/* ====== ROOM CARD ====== */
+function RoomCard({room,bookings,onBook,onView,date}){
+  const free=roomFree(room.id,date,'09:00','10:00',bookings);
+  return(
+    <div className="room-card">
+      <RoomGfx room={room} cls="sm"/>
+      <h4>{room.name}</h4>
+      <div className="meta-row"><Icon name="users" size={14}/><span>{room.cap} ที่นั่ง</span></div>
+      <div className="eq-row">{room.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{EQ_LABEL[e]}</span>)}</div>
+      <div className="row-between">
+        <span className={"badge "+(free?'b-green':'b-red')}><span className="d"></span>{free?'ว่าง':'ไม่ว่าง'}</span>
+        {free?<button className="btn btn-primary btn-sm" onClick={()=>onBook(room)}>จองเลย</button>:<button className="btn btn-ghost btn-sm" onClick={()=>onView(room)}>ดูตาราง</button>}
+      </div>
+    </div>
+  );
+}
+
+/* ====== CHECK-IN BAR ====== */
+function CheckinBar({b,now,checkIn}){
+  const left=Math.max(0,Math.floor((b._releaseAt-now)/1000));
+  const mm=String(Math.floor(left/60)).padStart(2,'0'),ss=String(left%60).padStart(2,'0');
+  return(
+    <div className="checkin-bar">
+      <Icon name="clock" size={18}/>
+      <div style={{flex:1,minWidth:160}}>
+        <div style={{fontSize:13.5,fontWeight:500}}>{ROOM(b.room).name} กำลังใช้งาน — รอการเช็คอิน</div>
+        <div style={{fontSize:11.5,color:'var(--text-muted)',marginTop:2}}>{b.s} - {b.e} · {b.title}</div>
+      </div>
+      <span className="countdown">ปล่อยอัตโนมัติใน {mm}:{ss}</span>
+      <button className="btn btn-primary btn-sm" onClick={()=>checkIn(b.id)}><Icon name="check" size={14}/>เช็คอิน</button>
+    </div>
+  );
+}
+
+/* ====== DASHBOARD ====== */
+function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm}){
+  const today=bookings.filter(b=>b.date===TODAY);
+  const counts={book:today.filter(b=>b.status!=='cancelled'&&b.status!=='draft').length,free:ROOMS.length+6-today.filter(b=>b.status==='in-use').length,inuse:today.filter(b=>b.status==='in-use').length,cancel:today.filter(b=>['cancelled','released'].includes(b.status)).length};
+  const myToday=today.filter(b=>b.owner===user.id&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
+  const q=search.trim().toLowerCase();
+  const availRooms=ROOMS.filter(r=>!q||r.name.toLowerCase().includes(q));
+  const activeCheckin=bookings.find(b=>b.status==='in-use'&&!b.checkedIn&&b.autoRelease);
+  return(
+    <div>
+      {activeCheckin&&<CheckinBar b={activeCheckin} now={now} checkIn={checkIn}/>}
+      <div className="row-between" style={{marginBottom:16,flexWrap:'wrap',gap:10}}>
+        <div style={{fontSize:13,color:'var(--text-muted)'}}><Icon name="calendar" size={14}/> วันนี้ {thFull(TODAY)}</div>
+        <button className="btn btn-primary" onClick={()=>openForm({})}><Icon name="plus" size={16}/>จองห้องประชุม</button>
+      </div>
+      <div className="dash-top" style={{marginBottom:22}}>
+        <div className="card pad">
+          <div className="section-title" style={{margin:'0 0 14px'}}>ภาพรวมวันนี้</div>
+          <div className="stat-grid">
+            <div className="stat s-blue"><div className="lbl">การจองวันนี้</div><div className="val">{counts.book}</div><div className="unit">รายการ</div><div className="si"><Icon name="calendar" size={20}/></div></div>
+            <div className="stat s-green"><div className="lbl">ห้องว่าง</div><div className="val">{counts.free}</div><div className="unit">ห้อง</div><div className="si"><Icon name="room" size={20}/></div></div>
+            <div className="stat s-amber"><div className="lbl">กำลังใช้งาน</div><div className="val">{counts.inuse}</div><div className="unit">ห้อง</div><div className="si"><Icon name="clock" size={20}/></div></div>
+            <div className="stat s-red"><div className="lbl">ยกเลิก</div><div className="val">{counts.cancel}</div><div className="unit">รายการ</div><div className="si"><Icon name="x" size={20}/></div></div>
+          </div>
+        </div>
+        <div className="card pad">
+          <div className="section-title" style={{margin:'0 0 8px'}}>การจองของวันนี้</div>
+          {myToday.length?myToday.map(b=>(
+            <div className="li" key={b.id} onClick={()=>openDetail(b)} style={{cursor:'pointer'}}>
+              <div className="li-time">{b.s} - {b.e}</div>
+              <div className="li-body"><div className="li-title">{ROOM(b.room).name}</div><div className="li-sub">{b.title}</div></div>
+              <span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span>
+            </div>
+          )):<div className="empty">วันนี้คุณยังไม่มีการจอง</div>}
+        </div>
+        <div className="card pad">
+          <div className="section-title" style={{margin:'0 0 12px'}}><Icon name="megaphone" size={17}/>ประกาศ</div>
+          <div className="announce">
+            <h5>แจ้งปิดปรับปรุงห้องประชุม</h5>
+            <p>ห้อง MUD 3 จะปิดปรับปรุงระบบภาพและเสียง ระหว่างวันที่ 25 - 27 มิถุนายน 2569 ขออภัยในความไม่สะดวก</p>
+            <div className="link" style={{marginTop:10}}>ดูรายละเอียด →</div>
+          </div>
+        </div>
+      </div>
+      <div className="row-between" style={{marginBottom:13}}>
+        <div className="section-title" style={{margin:0}}>ห้องว่างวันนี้</div>
+        <span className="link" onClick={()=>go('rooms')}>ดูห้องทั้งหมด →</span>
+      </div>
+      <div className="grid cols-4">
+        {availRooms.slice(0,4).map(r=><RoomCard key={r.id} room={r} bookings={bookings} date={TODAY} onBook={()=>openForm({roomId:r.id})} onView={()=>go('calendar')}/>)}
+      </div>
+    </div>
+  );
+}
+
+/* ====== AI ASSISTANT ====== */
+function botAnswer(text,bookings){
+  const t=text.toLowerCase();
+  const room=ROOMS.find(r=>t.includes(r.name.toLowerCase())||t.includes(r.id.toLowerCase())||(r.id==='A'&&t.includes('เอ'))||(r.id==='B'&&t.includes('บี'))||(r.id==='BR'&&t.includes('บอร์ด')));
+  const wantFree=/ว่าง|ช่วง|กี่โมง|เวลาไหน/.test(t);
+  const wantWho=/ใคร|จองอะไร|ตาราง|มีอะไร/.test(t);
+  const wantBook=/อยากจอง|ขอจอง|จองห้อง|book/.test(t)&&!wantFree&&!wantWho;
+  const wantSum=/สรุป|วันนี้|ภาพรวม|ทั้งหมด/.test(t)&&!wantFree&&!room;
+  if(wantBook)return{text:'ไปที่ฟอร์มจองได้เลยค่ะ กรอกห้อง/เวลา ระบบจะเช็คไม่ให้ชนกันให้อัตโนมัติ',action:'form'};
+  if(wantFree){
+    if(room){const gaps=freeGaps(room.id,TODAY,bookings);return{text:`ช่วงที่ว่างของ ${room.name} วันนี้ (${thShort(TODAY)}) ค่ะ — กดเพื่อจองได้เลย`,gaps:gaps.map(g=>({...g,roomId:room.id}))};}
+    const list=ROOMS.map(r=>({r,gaps:freeGaps(r.id,TODAY,bookings)})).filter(x=>x.gaps.length);
+    return{text:'ห้องที่ยังมีช่วงว่างวันนี้ค่ะ (กดช่วงเวลาเพื่อจอง)',roomGaps:list};
+  }
+  if(wantWho&&room){const list=bookings.filter(b=>b.room===room.id&&b.date===TODAY&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));return{text:list.length?`ตารางของ ${room.name} วันนี้ค่ะ`:`${room.name} วันนี้ยังว่างทั้งวันค่ะ`,bookings:list};}
+  if(wantSum){const td=bookings.filter(b=>b.date===TODAY&&ACTIVE.includes(b.status));const inuse=td.filter(b=>b.status==='in-use').length;return{text:`วันนี้มีการจอง ${td.length} รายการ · กำลังใช้งาน ${inuse} ห้อง · ห้องที่มีคิวเยอะสุดคือ MUD 1 ค่ะ`};}
+  return null;
+}
+/* ====== LLM PROVIDERS (ใส่ key เองเพื่อทดลอง) ====== */
+const AI_PROVIDERS={
+  gemini:{label:'Google Gemini',model:'gemini-2.5-flash',keyUrl:'https://aistudio.google.com/apikey',hint:'ฟรี ไม่ต้องใช้บัตร'},
+  openai:{label:'OpenAI',model:'gpt-4o-mini',keyUrl:'https://platform.openai.com/api-keys',hint:'gpt-4o-mini ราคาถูก'},
+  groq:{label:'Groq',model:'llama-3.1-8b-instant',keyUrl:'https://console.groq.com/keys',hint:'ฟรี เร็วมาก (Llama)'},
+};
+async function callLLM(cfg,prompt){
+  const provider=cfg.provider,key=cfg.key,model=cfg.model||AI_PROVIDERS[provider].model;
+  if(!key)throw new Error('no-key');
+  if(provider==='gemini'){
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+    const d=await r.json();if(d.error)throw new Error(d.error.message||'Gemini error');
+    return (d.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim()||'(ไม่มีคำตอบ)';
+  }
+  const base=provider==='groq'?'https://api.groq.com/openai/v1':'https://api.openai.com/v1';
+  const r=await fetch(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],max_tokens:1000})});
+  const d=await r.json();if(d.error)throw new Error((d.error.message||d.error)||'API error');
+  return (d.choices?.[0]?.message?.content||'(ไม่มีคำตอบ)').trim();
+}
+
+function ChatBot({bookings,toast,openForm,go,aiConfig}){
+  const [msgs,setMsgs]=useState([{t:'bot',text:'สวัสดีค่ะ ถามเรื่องห้องว่าง เวลา หรือการจองได้เลย เช่น "MUD 1 ว่างช่วงไหนวันนี้" 😊'}]);
+  const [input,setInput]=useState('');
+  const [busy,setBusy]=useState(false);
+  const bodyRef=useRef(null);
+  useEffect(()=>{if(bodyRef.current)bodyRef.current.scrollTop=bodyRef.current.scrollHeight;},[msgs,busy]);
+  const QUICK=['ห้องไหนว่างบ้างวันนี้','สรุปการจองวันนี้','MUD 1 ว่างช่วงไหน','อยากจองห้อง'];
+
+  const ask=async(text)=>{
+    if(!text.trim()||busy)return;
+    setMsgs(m=>[...m,{t:'me',text}]);setInput('');
+    const local=botAnswer(text,bookings);
+    if(local){setTimeout(()=>setMsgs(m=>[...m,{t:'bot',...local}]),300);return;}
+    // free-form → ใช้ LLM ตาม key ที่ผู้ใช้ตั้งไว้ในหน้าตั้งค่า
+    if(!aiConfig.key){
+      setTimeout(()=>setMsgs(m=>[...m,{t:'bot',text:'คำถามนี้ต้องใช้ AI ตอบค่ะ — ไปที่ "ตั้งค่า → ผู้ช่วย AI" ใส่ API key ก่อนนะคะ 🔑 (ระหว่างนี้ถาม "ห้องว่าง", "ช่วงว่างของ MUD 1", "สรุปวันนี้" ตอบจากข้อมูลจริงได้เลย)',action:'settings'}]),300);
+      return;
+    }
+    setBusy(true);
+    const ctx=bookings.filter(b=>ACTIVE.includes(b.status)).map(b=>({ห้อง:ROOM(b.room).name,วันที่:b.date,เวลา:b.s+'-'+b.e,หัวข้อ:b.title,ผู้จอง:b.by}));
+    try{
+      const ans=await callLLM(aiConfig,`คุณเป็นผู้ช่วยจองห้องประชุม ตอบสั้น กระชับ เป็นภาษาไทย วันนี้คือ ${thFull(TODAY)}. ข้อมูลการจองปัจจุบัน (JSON): ${JSON.stringify(ctx)}. คำถาม: ${text}`);
+      setMsgs(m=>[...m,{t:'bot',text:ans}]);
+    }catch(e){
+      const msg=e.message==='no-key'?'ยังไม่ได้ใส่ API key ค่ะ':('เชื่อมต่อ AI ไม่สำเร็จ: '+e.message+' — เช็ค key ให้ถูก หรือ provider บางตัวอาจติด CORS ตอนเรียกจากเบราว์เซอร์ตรงๆ');
+      setMsgs(m=>[...m,{t:'bot',text:msg}]);
+    }
+    setBusy(false);
+  };
+  return(
+    <div className="chat-wrap">
+      <div className="chat-head">
+        <div className="bot-ava"><Icon name="bot" size={19}/></div>
+        <div><div style={{fontWeight:600,fontSize:14}}>ผู้ช่วย AI</div><div style={{fontSize:11.5,color:aiConfig.key?'var(--green-tx)':'var(--text-muted)'}}>● {aiConfig.key?('เชื่อมต่อ '+AI_PROVIDERS[aiConfig.provider].label+' แล้ว'):'โหมดข้อมูลจริง · ยังไม่ใส่ key AI'}</div></div>
+      </div>
+      <div className="chat-body" ref={bodyRef}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:'flex',flexDirection:'column',alignItems:m.t==='me'?'flex-end':'flex-start',gap:7}}>
+            <div className={"msg "+m.t}>
+              {m.t==='bot'&&<div className="bot-ava" style={{width:30,height:30}}><Icon name="bot" size={16}/></div>}
+              <div className="bubble">{m.text}</div>
+            </div>
+            {m.gaps&&<div className="chips" style={{maxWidth:'90%'}}>{m.gaps.map((g,j)=><button key={j} className="gap-chip" onClick={()=>openForm({roomId:g.roomId,s:g.s,e:g.e})}><Icon name="plus" size={12}/>{g.s} - {g.e}</button>)}</div>}
+            {m.roomGaps&&<div style={{maxWidth:'90%',display:'flex',flexDirection:'column',gap:9}}>{m.roomGaps.map(({r,gaps})=>(<div key={r.id} style={{fontSize:12}}><div style={{fontWeight:500,marginBottom:5}}>{r.name}</div><div className="chips" style={{marginTop:0}}>{gaps.slice(0,4).map((g,j)=><button key={j} className="gap-chip" onClick={()=>openForm({roomId:r.id,s:g.s,e:g.e})}>{g.s}-{g.e}</button>)}</div></div>))}</div>}
+            {m.bookings&&<div className="opt-card card" style={{maxWidth:'90%',padding:'4px 14px',width:'100%'}}>{m.bookings.map(b=>(<div className="li" key={b.id}><div className="li-time" style={{width:90}}>{b.s} - {b.e}</div><div className="li-body"><div className="li-title">{b.title}</div><div className="li-sub">โดย {b.by}</div></div><span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span></div>))}</div>}
+            {m.action==='form'&&<button className="chip" onClick={()=>openForm({})}><Icon name="plus" size={13}/>เปิดฟอร์มจอง</button>}
+            {m.action==='settings'&&<button className="chip" onClick={()=>go('settings')}><Icon name="settings" size={13}/>ไปหน้าตั้งค่า ใส่ key</button>}
+          </div>
+        ))}
+        {busy&&<div className="msg bot"><div className="bot-ava" style={{width:30,height:30}}><Icon name="bot" size={16}/></div><div className="bubble" style={{padding:0}}><div className="typing"><i></i><i></i><i></i></div></div></div>}
+        <div className="chips" style={{marginTop:2}}>{QUICK.map(q=><button key={q} className="chip soft" onClick={()=>ask(q)}>{q}</button>)}</div>
+      </div>
+      <div className="chat-input">
+        <input placeholder="พิมพ์คำถาม..." value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')ask(input);}}/>
+        <button className="send-btn" disabled={busy||!input.trim()} onClick={()=>ask(input)}><Icon name="send" size={16}/></button>
+      </div>
+    </div>
+  );
+}
+
+/* ====== BOOKING FORM ====== */
+function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
+  const [roomId,setRoomId]=useState(prefill.roomId||'A');
+  const [date,setDate]=useState(prefill.date||TODAY);
+  const [s,setS]=useState(prefill.s||'09:00');
+  const [e,setE]=useState(prefill.e||'10:00');
+  const [title,setTitle]=useState('');
+  const [att,setAtt]=useState('');
+  const [link,setLink]=useState('');
+  useEffect(()=>()=>clearPrefill(),[]);
+  const gaps=useMemo(()=>freeGaps(roomId,date,bookings),[roomId,date,bookings]);
+  const valid=t2m(e)>t2m(s);
+  const conflict=valid&&!roomFree(roomId,date,s,e,bookings);
+  const submit=(status)=>{
+    if(!valid){toast('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม','err');return;}
+    if(status!=='draft'&&conflict){toast('ช่วงเวลานี้ชนกับการจองอื่น','err');return;}
+    addBooking({room:roomId,date,s,e,title:title||'การประชุมใหม่',att:Number(att)||ROOM(roomId).cap,owner:user.id,by:user.name,link,status,checkedIn:false});
+    toast(status==='draft'?'บันทึกร่างแล้ว':'จองห้อง '+ROOM(roomId).name+' สำเร็จ','ok');
+    go(status==='draft'?'mine':'calendar');
+  };
+  return(
+    <div className="form-wrap">
+      <div className="card pad">
+        <div className="form-grid">
+          <div className="field">
+            <label>ชื่อห้องประชุม<span className="req">*</span></label>
+            <select className="inp" value={roomId} onChange={ev=>setRoomId(ev.target.value)}>
+              {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name} ({r.cap} ที่นั่ง)</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>วันที่<span className="req">*</span></label>
+            <input className="inp" type="date" value={date} onChange={ev=>setDate(ev.target.value)}/>
+          </div>
+          <div className="field">
+            <label>ช่วงเวลา<span className="req">*</span></label>
+            <div className="time-row">
+              <div><div style={{fontSize:11,color:'var(--text-muted)',marginBottom:5}}>เริ่ม</div><input className="inp" type="time" value={s} onChange={ev=>setS(ev.target.value)}/></div>
+              <div><div style={{fontSize:11,color:'var(--text-muted)',marginBottom:5}}>สิ้นสุด</div><input className="inp" type="time" value={e} onChange={ev=>setE(ev.target.value)}/></div>
+              <div className="dur-pill"><Icon name="clock" size={14}/>&nbsp;{durText(s,e)}</div>
+            </div>
+          </div>
+          {conflict&&<div className="conflict-warn"><Icon name="warn" size={16}/><span>ช่วง {s}-{e} ของ {ROOM(roomId).name} ชนกับการจองอื่น เลือกช่วงที่ว่างด้านล่างได้เลย</span></div>}
+          <div className="gap-help">
+            <div className="gh-title"><Icon name="checkcircle" size={14}/>ช่วงที่ว่างของ {ROOM(roomId).name} วันที่ {thShort(date)}</div>
+            {gaps.length?<div className="chips">{gaps.map((g,i)=><button key={i} className="gap-chip" onClick={()=>{setS(g.s);setE(g.e);}}>{g.s} - {g.e}</button>)}</div>:<div style={{fontSize:12,color:'var(--text-faint)'}}>วันนี้เต็มทั้งวันแล้ว</div>}
+          </div>
+          <div className="field">
+            <label>หัวข้อการประชุม</label>
+            <input className="inp" placeholder="เช่น Weekly Team Meeting" value={title} onChange={ev=>setTitle(ev.target.value)}/>
+          </div>
+          <div className="field">
+            <label>ผู้จอง (อัตโนมัติจากสมาชิก)</label>
+            <div className="auto-field"><div className="avatar" style={{width:30,height:30,fontSize:12}}>{user.nick[0]}</div><div><div style={{fontSize:13,fontWeight:500}}>{user.name} ({user.nick})</div><div style={{fontSize:11,color:'var(--text-muted)'}}>{user.dept}{user.phone?' · '+user.phone:''}</div></div></div>
+          </div>
+          <div className="time-row" style={{gridTemplateColumns:'1fr 1fr'}}>
+            <div className="field"><label>จำนวนผู้เข้าร่วม</label><input className="inp" type="number" min="1" placeholder={ROOM(roomId).cap} value={att} onChange={ev=>setAtt(ev.target.value)}/></div>
+            <div className="field"><label>ลิงก์ห้องประชุม (Zoom)</label><input className="inp" placeholder="https://zoom.us/j/..." value={link} onChange={ev=>setLink(ev.target.value)}/></div>
+          </div>
+          <div className="form-actions">
+            <button className="btn btn-primary" style={{flex:1,minWidth:140}} onClick={()=>submit('confirmed')}><Icon name="check" size={16}/>ยืนยันการจอง</button>
+            <button className="btn btn-ghost" onClick={()=>submit('draft')}><Icon name="save" size={15}/>บันทึกร่าง</button>
+            <button className="btn btn-ghost" onClick={()=>go('home')}><Icon name="x" size={15}/>ยกเลิก</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ====== CALENDAR ====== */
+function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
+  const [view,setView]=useState('sheet');
+  const [sheetRoom,setSheetRoom]=useState('A');
+  const H_START=8,H_END=20,SPAN=(H_END-H_START)*60;
+  const hours=[];for(let h=H_START;h<=H_END;h++)hours.push(h);
+  const pos=(s,e)=>({left:(t2m(s)-H_START*60)/SPAN*100+'%',width:(t2m(e)-t2m(s))/SPAN*100+'%'});
+  // sheet: 09:00-18:00
+  const SH=9*60,SHE=18*60,SHS=SHE-SH,shCols=[9,10,11,12,13,14,15,16,17];
+  const spos=(s,e)=>{const a=Math.max(t2m(s),SH),b=Math.min(t2m(e),SHE);if(b<=a)return null;return{left:(a-SH)/SHS*100+'%',width:(b-a)/SHS*100+'%'};};
+  const HOLIDAYS=['2026-06-03']; // วันเฉลิมฯ (ตัวอย่างวันหยุด)
+  const weekRows=useMemo(()=>{
+    const d=parseISO(cursor),y=d.getFullYear(),m=d.getMonth(),dim=new Date(y,m+1,0).getDate();
+    const weeks=[];let cur=[];
+    for(let day=1;day<=dim;day++){const dt=new Date(y,m,day),dow=dt.getDay();if(dow===0||dow===6)continue;if(dow===1&&cur.length){weeks.push(cur);cur=[];}cur.push(toISO(dt));}
+    if(cur.length)weeks.push(cur);return weeks;
+  },[cursor]);
+  const isMonthly=view==='month'||view==='sheet';
+  const label=isMonthly?TH_MONTHS_F[parseISO(cursor).getMonth()]+' '+(parseISO(cursor).getFullYear()+543):view==='week'?'สัปดาห์ '+thShort(startOfWeek(cursor)):thFull(cursor);
+  const move=n=>{if(isMonthly){const d=parseISO(cursor);d.setMonth(d.getMonth()+n);d.setDate(1);setCursor(toISO(d));}else if(view==='week')setCursor(addDays(cursor,7*n));else setCursor(addDays(cursor,n));};
+  return(
+    <div className="card pad">
+      <div className="cal-toolbar">
+        <button className="nav-arrow" onClick={()=>move(-1)}><Icon name="cleft" size={16}/></button>
+        <button className="nav-arrow" onClick={()=>move(1)}><Icon name="cright" size={16}/></button>
+        <button className="btn btn-ghost btn-sm" onClick={()=>setCursor(TODAY)}>วันนี้</button>
+        <div style={{fontWeight:600,fontSize:15,marginLeft:4}}>{label}</div>
+        <div className="seg" style={{marginLeft:'auto'}}>{[['sheet','ตารางห้อง'],['day','วัน'],['week','สัปดาห์'],['month','เดือน']].map(([v,l])=><button key={v} className={view===v?'on':''} onClick={()=>setView(v)}>{l}</button>)}</div>
+      </div>
+
+      {view==='sheet'&&<>
+        <div className="room-pills">
+          {ROOMS.map(r=><button key={r.id} className={"room-pill"+(sheetRoom===r.id?' on':'')} onClick={()=>setSheetRoom(r.id)}><span className="dotc" style={{background:r.g[0]}}></span>{r.name}</button>)}
+        </div>
+        <div className="sheet"><div className="sheet-inner">
+          <div className="sheet-head">
+            <div style={{fontSize:11.5,fontWeight:600,color:'var(--text-muted)',display:'flex',alignItems:'center',padding:'0 9px'}}>วันที่ / เวลา</div>
+            <div className="sheet-hours" style={{display:'grid',gridTemplateColumns:`repeat(${shCols.length},1fr)`}}>{shCols.map(h=><span key={h}>{String(h).padStart(2,'0')}:00</span>)}</div>
+          </div>
+          {weekRows.map((wk,wi)=>(
+            <div key={wi}>
+              <div className="sheet-weekhdr">สัปดาห์ที่ {wi+1}</div>
+              {wk.map(d=>{
+                const dt=parseISO(d),hol=HOLIDAYS.includes(d);
+                const list=bookings.filter(b=>b.room===sheetRoom&&b.date===d&&!['draft','cancelled'].includes(b.status));
+                return(<div className={"sheet-row"+(hol?' holi':'')} key={d}>
+                  <div className={"sheet-day"+(d===TODAY?' today':'')}>{TH_DOW[dt.getDay()]}<small>{dt.getDate()}/{dt.getMonth()+1}</small></div>
+                  <div className="sheet-track">
+                    <div className="sheet-grid" style={{gridTemplateColumns:`repeat(${shCols.length},1fr)`}}>{shCols.map(h=><span key={h}></span>)}</div>
+                    {!hol&&<div className="sheet-empty" onClick={()=>openForm({roomId:sheetRoom,date:d})} title="กดเพื่อจองวันนี้"></div>}
+                    {!hol&&list.map(b=>{const p=spos(b.s,b.e);if(!p)return null;return<div key={b.id} className="sheet-block" style={{...p,background:STATUS[b.status].bar}} onClick={ev=>{ev.stopPropagation();openDetail(b);}} title={b.title+' · '+b.by}>{b.title}<small> {b.s}-{b.e}</small></div>;})}
+                    {hol&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10.5,color:'var(--text-faint)',fontWeight:500}}>วันหยุด</div>}
+                  </div>
+                </div>);
+              })}
+            </div>
+          ))}
+        </div></div>
+        <div className="legend">
+          {Object.entries(STATUS).filter(([k])=>!['released','draft'].includes(k)).map(([k,v])=><span key={k}><i style={{background:v.bar}}></i>{v.label}</span>)}
+          <span style={{color:'var(--text-faint)'}}>กดช่องว่าง = จอง · กดบล็อก = ดูรายละเอียด</span>
+        </div>
+      </>}
+
+      {view==='day'&&<>
+        <div className="timeline"><div className="tl-inner">
+          <div className="tl-head"><div style={{fontSize:12,fontWeight:600,color:'var(--text-muted)',alignSelf:'center'}}>ห้องประชุม</div><div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div></div>
+          {ROOMS.map(r=>{
+            const list=bookings.filter(b=>b.room===r.id&&b.date===cursor&&b.status!=='draft');
+            const gaps=freeGaps(r.id,cursor,bookings);
+            return(
+              <div className="tl-row" key={r.id}>
+                <div className="tl-room"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
+                <div className="tl-track">
+                  <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
+                  {gaps.map((g,i)=><div key={'g'+i} className="tl-gap" style={pos(g.s,g.e)} onClick={()=>openForm({roomId:r.id,date:cursor,s:g.s,e:g.e})} title="กดเพื่อจองช่วงนี้">+ ว่าง</div>)}
+                  {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,opacity:b.status==='cancelled'?.5:1}} onClick={()=>openDetail(b)}>{b.title}<small>{b.s} · {b.by}</small></div>)}
+                </div>
+              </div>
+            );
+          })}
+        </div></div>
+        <div className="legend">
+          {Object.entries(STATUS).filter(([k])=>!['released','draft'].includes(k)).map(([k,v])=><span key={k}><i style={{background:v.bar}}></i>{v.label}</span>)}
+          <span><i className="dash"></i>ช่วงว่าง (กดเพื่อจอง)</span>
+        </div>
+      </>}
+
+      {view==='week'&&(()=>{
+        const wk=startOfWeek(cursor);const days=[...Array(7)].map((_,i)=>addDays(wk,i));
+        return<div className="week-grid">{days.map(d=>{
+          const list=bookings.filter(b=>b.date===d&&b.status!=='draft'&&b.status!=='cancelled').sort((a,b)=>t2m(a.s)-t2m(b.s));
+          const dt=parseISO(d);
+          return(<div key={d} className={"wcol"+(d===TODAY?' today':'')}>
+            <div className="wc-head">{TH_DOW[dt.getDay()]}<b>{dt.getDate()}</b></div>
+            {list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar}} onClick={()=>openDetail(b)}>{ROOM(b.room).name}<small>{b.s}-{b.e}</small></div>):<div className="wc-empty">ว่าง</div>}
+          </div>);
+        })}</div>;
+      })()}
+
+      {view==='month'&&(()=>{
+        const first=parseISO(cursor);first.setDate(1);const startISO=startOfWeek(toISO(first));
+        const cells=[...Array(42)].map((_,i)=>addDays(startISO,i));const mon=parseISO(cursor).getMonth();
+        return<div>
+          <div className="month-grid" style={{marginBottom:6}}>{TH_DOW.map(d=><div key={d} className="mh">{d}</div>)}</div>
+          <div className="month-grid">{cells.map(d=>{
+            const dt=parseISO(d);const inMon=dt.getMonth()===mon;
+            const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status));
+            return(<div key={d} className={"mcell"+(!inMon?' muted-cell':'')+(d===TODAY?' today':'')} onClick={()=>{setCursor(d);setView('sheet');}}>
+              <div className="mc-date">{dt.getDate()}</div>
+              <div className="mc-dots">{list.slice(0,4).map(b=><span key={b.id} className="mc-dot" style={{background:STATUS[b.status].bar}}></span>)}</div>
+              {list.length>0&&<div className="mc-count">{list.length} รายการ</div>}
+            </div>);
+          })}</div>
+          <div style={{fontSize:11.5,color:'var(--text-muted)',marginTop:10,textAlign:'center'}}>กดที่วันเพื่อดูตารางห้อง</div>
+        </div>;
+      })()}
+    </div>
+  );
+}
+
+/* ====== MY BOOKINGS ====== */
+function MyBookings({bookings,openDetail,checkIn,user}){
+  const [filter,setFilter]=useState('all');
+  const mine=bookings.filter(b=>b.owner===user.id);
+  const F={all:'ทั้งหมด',upcoming:'กำลังจะมาถึง',inuse:'กำลังใช้งาน',draft:'ร่าง',cancelled:'ยกเลิก'};
+  const show=mine.filter(b=>filter==='all'?true:filter==='upcoming'?['confirmed','pending'].includes(b.status):filter==='inuse'?b.status==='in-use':filter==='draft'?b.status==='draft':['cancelled','released'].includes(b.status));
+  return(
+    <div>
+      <div className="tabs">{Object.entries(F).map(([k,l])=><button key={k} className={"tab"+(filter===k?' on':'')} onClick={()=>setFilter(k)}>{l}</button>)}</div>
+      <div className="card pad">
+        {show.length?show.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:t2m(a.s)-t2m(b.s)).map(b=>{
+          const r=ROOM(b.room),canCheck=b.status==='in-use'&&!b.checkedIn;
+          return(<div className="li" key={b.id}>
+            <div className="li-time">{b.s} - {b.e}<small>{thShort(b.date)}</small></div>
+            <div style={{width:38,height:38,borderRadius:9,background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',flexShrink:0}}><Icon name="room" size={17}/></div>
+            <div className="li-body" onClick={()=>openDetail(b)} style={{cursor:'pointer'}}><div className="li-title">{r.name} · {b.title}</div><div className="li-sub">{b.att} คน{b.link?' · มีลิงก์ Zoom':''}</div></div>
+            {b.checkedIn&&<span className="badge b-green"><Icon name="check" size={12}/>เช็คอินแล้ว</span>}
+            {canCheck&&<button className="btn btn-primary btn-sm" onClick={()=>checkIn(b.id)}><Icon name="check" size={13}/>เช็คอิน</button>}
+            <span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span>
+          </div>);
+        }):<div className="empty">ไม่มีรายการในหมวดนี้</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ====== ROOMS PAGE ====== */
+function RoomsPage({bookings,go,openForm}){
+  return(<div className="grid cols-3">{ROOMS.map((r,idx)=>{
+    const free=roomFree(r.id,TODAY,'09:00','10:00',bookings);
+    return(<div className="room-card" key={r.id}>
+      <RoomGfx room={r} badge={<span className={"badge "+(free?'b-green':'b-red')} style={{boxShadow:'var(--shadow-sm)'}}><span className="d"></span>{free?'ว่าง':'ไม่ว่าง'}</span>}/>
+      <h4>{r.name}</h4>
+      <div className="meta-row"><Icon name="users" size={14}/><span>{r.cap} ที่นั่ง</span><span style={{color:'var(--text-faint)'}}>·</span><span>ชั้น {idx%3+1}</span></div>
+      <div className="eq-row">{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{EQ_LABEL[e]}</span>)}</div>
+      <div className="row-between"><button className="btn btn-ghost btn-sm" onClick={()=>go('calendar')}>ดูตาราง</button><button className="btn btn-primary btn-sm" onClick={()=>openForm({roomId:r.id})}>จองห้องนี้</button></div>
+    </div>);
+  })}</div>);
+}
+
+/* ====== CHARTS ====== */
+function Donut({data,size=170}){
+  const total=data.reduce((s,d)=>s+d.value,0),r=size/2-18,C=2*Math.PI*r;let acc=0;
+  return(<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--surface-3)" strokeWidth="20"/>
+    {data.map((d,i)=>{const f=d.value/total,dash=f*C,off=acc*C;acc+=f;return<circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={d.color} strokeWidth="20" strokeDasharray={`${dash} ${C-dash}`} strokeDashoffset={-off} transform={`rotate(-90 ${size/2} ${size/2})`}/>;})}
+    <text x="50%" y="47%" textAnchor="middle" fontSize="22" fontWeight="600" fill="var(--text)" fontFamily="Prompt">{total}</text>
+    <text x="50%" y="60%" textAnchor="middle" fontSize="11" fill="var(--text-muted)" fontFamily="Prompt">ครั้ง/เดือน</text>
+  </svg>);
+}
+function Bars({data,height=170}){
+  const max=Math.max(...data.map(d=>d.value)),W=320,pad=24,bw=26,step=(W-pad*2)/data.length;
+  return(<svg width="100%" viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="xMidYMid meet">
+    {[0,.5,1].map((g,i)=>{const y=pad+(height-pad*2)*(1-g);return<line key={i} x1={pad} y1={y} x2={W-pad} y2={y} stroke="var(--border)" strokeDasharray="3 3"/>;})}
+    {data.map((d,i)=>{const h=(d.value/max)*(height-pad*2),x=pad+step*i+(step-bw)/2,y=height-pad-h;return<g key={i}><rect x={x} y={y} width={bw} height={h} rx="5" fill="var(--primary)"/><text x={x+bw/2} y={height-pad+13} textAnchor="middle" fontSize="10" fill="var(--text-muted)" fontFamily="Prompt">{d.label}</text></g>;})}
+  </svg>);
+}
+function ReportsPage(){
+  const donut=[{label:'MUD 1',value:35,color:'#2563EB'},{label:'MUD 2',value:25,color:'#0EA5A5'},{label:'Board Room',value:20,color:'#334155'},{label:'MUD 3',value:15,color:'#8B5CF6'},{label:'อื่นๆ',value:5,color:'#F59E0B'}];
+  const months=[{label:'ม.ค.',value:95},{label:'ก.พ.',value:78},{label:'มี.ค.',value:130},{label:'เม.ย.',value:110},{label:'พ.ค.',value:142},{label:'มิ.ย.',value:156}];
+  const top=[['MUD 1',45,120],['MUD 2',38,85],['Board Room',32,70],['MUD 3',28,60]];
+  return(<div>
+    <div className="rep-grid">
+      <div className="kpi"><div className="lbl">ห้องทั้งหมด</div><div className="val">12</div><div className="unit">ห้อง</div></div>
+      <div className="kpi"><div className="lbl">การจองทั้งหมด</div><div className="val">156</div><div className="unit">รายการ</div></div>
+      <div className="kpi"><div className="lbl">ชั่วโมงการใช้งาน</div><div className="val">320</div><div className="unit">ชั่วโมง</div></div>
+      <div className="kpi"><div className="lbl">อัตราการใช้งาน</div><div className="val" style={{color:'var(--green-tx)'}}>75%</div><div className="unit">เฉลี่ย</div></div>
+    </div>
+    <div className="chart-2" style={{marginBottom:18}}>
+      <div className="card pad"><div className="section-title" style={{margin:'0 0 14px'}}>การใช้งานห้องประชุม</div><div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap',justifyContent:'center'}}><Donut data={donut}/><div className="donut-legend">{donut.map(d=><div className="dl-item" key={d.label}><i style={{background:d.color}}></i>{d.label}<span className="pct">{d.value}%</span></div>)}</div></div></div>
+      <div className="card pad"><div className="section-title" style={{margin:'0 0 14px'}}>การจองรายเดือน</div><Bars data={months}/></div>
+    </div>
+    <div className="card pad"><div className="section-title" style={{margin:'0 0 8px'}}>ห้องที่มีการใช้งานมากที่สุด</div>
+      <table className="tbl"><thead><tr><th style={{width:50}}>อันดับ</th><th>ห้องประชุม</th><th>การจอง (ครั้ง)</th><th>ชั่วโมงการใช้งาน</th></tr></thead>
+        <tbody>{top.map((t,i)=><tr key={i}><td><span className="rank">{i+1}</span></td><td style={{fontWeight:500}}>{t[0]}</td><td>{t[1]} ครั้ง</td><td>{t[2]} ชม.</td></tr>)}</tbody></table>
+    </div>
+  </div>);
+}
+
+/* ====== SETTINGS ====== */
+function SettingsPage({dark,setDark,user,setUser,openProfile,aiConfig,setAiConfig}){
+  const [notif,setNotif]=useState(true),[auto,setAuto]=useState(true),[reminder,setReminder]=useState(true);
+  const [testing,setTesting]=useState(false),[testResult,setTestResult]=useState(null);
+  const prov=AI_PROVIDERS[aiConfig.provider];
+  const testKey=async()=>{
+    if(!aiConfig.key){setTestResult({ok:false,msg:'กรุณาใส่ API key ก่อน'});return;}
+    setTesting(true);setTestResult(null);
+    try{const r=await callLLM(aiConfig,'ตอบกลับสั้นๆ ว่า: เชื่อมต่อสำเร็จ');setTestResult({ok:true,msg:'✓ เชื่อมต่อสำเร็จ — '+r.slice(0,60)});}
+    catch(e){setTestResult({ok:false,msg:'✕ '+(e.message==='no-key'?'ยังไม่ใส่ key':e.message)});}
+    setTesting(false);
+  };
+  return(<div style={{maxWidth:600}}>
+    <div className="card pad" style={{marginBottom:16}}>
+      <div style={{display:'flex',alignItems:'center',gap:14}}>
+        <div className="avatar" style={{width:54,height:54,fontSize:20}}>{user.nick[0]}</div>
+        <div style={{flex:1}}><div style={{fontWeight:600,fontSize:16}}>{user.name} <span style={{fontSize:13,color:'var(--text-muted)',fontWeight:400}}>({user.nick})</span></div><div style={{fontSize:12.5,color:'var(--text-muted)'}}>{user.dept}{user.phone?' · '+user.phone:''}</div></div>
+        <button className="btn btn-ghost btn-sm" onClick={openProfile}><Icon name="edit" size={14}/>แก้ไข</button>
+      </div>
+    </div>
+
+    {/* ===== AI / Chatbot ===== */}
+    <div className="card pad" style={{marginBottom:16}}>
+      <div className="section-title" style={{margin:'0 0 4px'}}><Icon name="bot" size={17}/>ผู้ช่วย AI (แชทบอท)</div>
+      <p style={{fontSize:12,color:'var(--text-muted)',margin:'0 0 16px',lineHeight:1.6}}>ใส่ API key เพื่อให้แชทคุยแบบ AI อิสระได้ (คำถามเรื่องห้องว่าง/สรุป ตอบจากข้อมูลจริงได้อยู่แล้วโดยไม่ต้องใส่ key)</p>
+      <div className="form-grid">
+        <div className="field">
+          <label>ผู้ให้บริการ AI</label>
+          <select className="inp" value={aiConfig.provider} onChange={e=>{setAiConfig(c=>({...c,provider:e.target.value,model:''}));setTestResult(null);}}>
+            {Object.entries(AI_PROVIDERS).map(([k,p])=><option key={k} value={k}>{p.label} — {p.hint}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>API Key<span className="req">*</span></label>
+          <input className="inp" type="password" placeholder="วาง API key ที่นี่" value={aiConfig.key} onChange={e=>{setAiConfig(c=>({...c,key:e.target.value}));setTestResult(null);}} autoComplete="off"/>
+          <div style={{marginTop:7}}><a href={prov.keyUrl} target="_blank" className="link"><Icon name="link" size={12}/> ขอ key ของ {prov.label} (คลิก)</a></div>
+        </div>
+        <div className="field">
+          <label>โมเดล (ปล่อยว่างใช้ค่าเริ่มต้น)</label>
+          <input className="inp" placeholder={prov.model} value={aiConfig.model} onChange={e=>setAiConfig(c=>({...c,model:e.target.value}))}/>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-primary" disabled={testing} onClick={testKey}><Icon name={testing?'clock':'checkcircle'} size={15}/>{testing?'กำลังทดสอบ...':'ทดสอบการเชื่อมต่อ'}</button>
+          {aiConfig.key&&<button className="btn btn-ghost" onClick={()=>{setAiConfig(c=>({...c,key:''}));setTestResult(null);}}><Icon name="x" size={14}/>ล้าง key</button>}
+        </div>
+        {testResult&&<div className={"conflict-warn"} style={{background:testResult.ok?'var(--green-bg)':'var(--red-bg)',borderColor:testResult.ok?'var(--green)':'var(--red)',color:testResult.ok?'var(--green-tx)':'var(--red-tx)'}}><Icon name={testResult.ok?'checkcircle':'warn'} size={16}/><span>{testResult.msg}</span></div>}
+        <div className="perm-note"><Icon name="warn" size={16}/><span>โหมดทดลองเท่านั้น: key เก็บในเบราว์เซอร์ชั่วคราว (refresh แล้วต้องใส่ใหม่) และจะถูกส่งจากหน้าเว็บตรงไปยังผู้ให้บริการ — <b>อย่านำไป deploy สาธารณะพร้อม key จริง</b> ของจริงต้องซ่อน key ไว้ฝั่ง backend</span></div>
+      </div>
+    </div>
+
+    <div className="card pad">
+      <div className="section-title" style={{margin:'0 0 6px'}}>การแสดงผลและสิทธิ์</div>
+      <div className="set-row"><div className="set-ic"><Icon name={dark?'moon':'sun'} size={18}/></div><div className="set-body"><div className="t">โหมดมืด (Dark Mode)</div><div className="d">สลับธีมสว่าง/มืดทั้งระบบ</div></div><div className={"switch"+(dark?' on':'')} onClick={()=>setDark(d=>!d)}></div></div>
+      <div className="set-row"><div className="set-ic"><Icon name="shield" size={18}/></div><div className="set-body"><div className="t">โหมดแอดมิน / IT</div><div className="d">เปิดเพื่อแก้ไข/ยกเลิกการจองของทุกคนได้ (ทดสอบสิทธิ์)</div></div><div className={"switch"+(user.isAdmin?' on':'')} onClick={()=>setUser(u=>({...u,isAdmin:!u.isAdmin}))}></div></div>
+      <div className="set-row"><div className="set-ic"><Icon name="bell" size={18}/></div><div className="set-body"><div className="t">แจ้งเตือนการจอง</div><div className="d">รับการแจ้งเตือนเมื่อมีการจอง/ยกเลิก</div></div><div className={"switch"+(notif?' on':'')} onClick={()=>setNotif(v=>!v)}></div></div>
+      <div className="set-row"><div className="set-ic"><Icon name="clock" size={18}/></div><div className="set-body"><div className="t">ปล่อยห้องอัตโนมัติ</div><div className="d">ปล่อยห้องคืนถ้าไม่เช็คอินภายใน 15 นาที</div></div><div className={"switch"+(auto?' on':'')} onClick={()=>setAuto(v=>!v)}></div></div>
+      <div className="set-row"><div className="set-ic"><Icon name="sparkle" size={18}/></div><div className="set-body"><div className="t">เตือนก่อนประชุม 10 นาที</div><div className="d">ส่ง reminder ผ่านอีเมล/แอป</div></div><div className={"switch"+(reminder?' on':'')} onClick={()=>setReminder(v=>!v)}></div></div>
+    </div>
+  </div>);
+}
+
+/* ====== PROFILE MODAL (register/edit member) ====== */
+function ProfileModal({user,setUser,close,toast}){
+  const [f,setF]=useState({...user});
+  const save=()=>{if(!f.name.trim()||!f.nick.trim()){toast('กรุณากรอกชื่อ-สกุล และชื่อเล่น','err');return;}setUser(u=>({...u,...f}));toast('บันทึกข้อมูลสมาชิกแล้ว','ok');close();};
+  const F=(k,label,ph,req,icon)=>(<div className="field"><label>{label}{req&&<span className="req">*</span>}</label><div className="auto-field" style={{padding:'2px 12px'}}><Icon name={icon} size={16}/><input className="inp" style={{border:'none',background:'none',padding:'10px 0'}} placeholder={ph} value={f[k]} onChange={e=>setF({...f,[k]:e.target.value})}/></div></div>);
+  return(<div className="overlay" onClick={close}>
+    <div className="modal" onClick={e=>e.stopPropagation()}>
+      <div className="modal-head"><Icon name="user" size={18}/>ข้อมูลสมาชิก<button className="modal-x" style={{position:'static',marginLeft:'auto',background:'var(--surface-2)',color:'var(--text-muted)'}} onClick={close}><Icon name="x" size={17}/></button></div>
+      <div style={{padding:'14px 20px 20px'}}>
+        <div className="form-grid">
+          {F('name','ชื่อ-สกุล','เช่น เต้ วราการ',true,'user')}
+          {F('nick','ชื่อเล่น','เช่น เต้',true,'user')}
+          {F('dept','แผนก','เช่น IT Department',false,'building')}
+          {F('phone','เบอร์ติดต่อ (โต๊ะ/ส่วนตัว)','เช่น 1234 (เผื่อกรณีไม่สะดวกมายกเลิก)',false,'phone')}
+          <button className="btn btn-primary btn-block" onClick={save}><Icon name="check" size={16}/>บันทึกข้อมูลสมาชิก</button>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ====== EDIT (reschedule / change room) ====== */
+function EditModal({b,bookings,close,save,toast}){
+  const [roomId,setRoomId]=useState(b.room);const [date,setDate]=useState(b.date);const [s,setS]=useState(b.s);const [e,setE]=useState(b.e);
+  const gaps=freeGaps(roomId,date,bookings.filter(x=>x.id!==b.id));
+  const valid=t2m(e)>t2m(s);const conflict=valid&&!roomFree(roomId,date,s,e,bookings,b.id);
+  const apply=()=>{if(!valid){toast('เวลาไม่ถูกต้อง','err');return;}if(conflict){toast('ช่วงนี้ชนกับการจองอื่น','err');return;}save(b.id,{room:roomId,date,s,e});toast('แก้ไขการจองแล้ว','ok');close();};
+  return(<div className="overlay" onClick={close}>
+    <div className="modal" onClick={e=>e.stopPropagation()}>
+      <div className="modal-head"><Icon name="edit" size={17}/>แก้ไข / เลื่อน / เปลี่ยนห้อง<button className="modal-x" style={{position:'static',marginLeft:'auto',background:'var(--surface-2)',color:'var(--text-muted)'}} onClick={close}><Icon name="x" size={17}/></button></div>
+      <div style={{padding:'14px 20px 20px'}}>
+        <div className="form-grid">
+          <div className="field"><label>เปลี่ยนห้อง</label><select className="inp" value={roomId} onChange={ev=>setRoomId(ev.target.value)}>{ROOMS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
+          <div className="field"><label>วันที่</label><input className="inp" type="date" value={date} onChange={ev=>setDate(ev.target.value)}/></div>
+          <div className="time-row"><div><div style={{fontSize:11,color:'var(--text-muted)',marginBottom:5}}>เริ่ม</div><input className="inp" type="time" value={s} onChange={ev=>setS(ev.target.value)}/></div><div><div style={{fontSize:11,color:'var(--text-muted)',marginBottom:5}}>สิ้นสุด</div><input className="inp" type="time" value={e} onChange={ev=>setE(ev.target.value)}/></div><div className="dur-pill">{durText(s,e)}</div></div>
+          {conflict&&<div className="conflict-warn"><Icon name="warn" size={16}/><span>ช่วงนี้ชนกับการจองอื่น</span></div>}
+          {gaps.length>0&&<div className="gap-help"><div className="gh-title"><Icon name="checkcircle" size={14}/>ช่วงว่าง {ROOM(roomId).name}</div><div className="chips">{gaps.map((g,i)=><button key={i} className="gap-chip" onClick={()=>{setS(g.s);setE(g.e);}}>{g.s}-{g.e}</button>)}</div></div>}
+          <button className="btn btn-primary btn-block" onClick={apply}><Icon name="check" size={16}/>บันทึกการแก้ไข</button>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ====== BOOKING DETAIL ====== */
+function BookingDetail({b,close,cancel,checkIn,user,onEdit}){
+  const r=ROOM(b.room),st=STATUS[b.status];
+  const canManage=user.isAdmin||b.owner===user.id;
+  const canCheck=b.status==='in-use'&&!b.checkedIn;
+  return(<div className="overlay" onClick={close}>
+    <div className="modal" onClick={e=>e.stopPropagation()}>
+      <div className="modal-gfx" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}>
+        <button className="modal-x" onClick={close}><Icon name="x" size={18}/></button>
+        <svg width="160" height="80" viewBox="0 0 118 60" fill="none" style={{opacity:.95}}><rect x="14" y="40" width="90" height="9" rx="4.5" fill="rgba(255,255,255,.92)"/><circle cx="28" cy="34" r="5" fill="rgba(255,255,255,.85)"/><circle cx="46" cy="32" r="5" fill="rgba(255,255,255,.85)"/><circle cx="72" cy="32" r="5" fill="rgba(255,255,255,.85)"/><circle cx="90" cy="34" r="5" fill="rgba(255,255,255,.85)"/><rect x="40" y="8" width="38" height="20" rx="3" fill="rgba(255,255,255,.25)" stroke="rgba(255,255,255,.7)" strokeWidth="1.5"/></svg>
+      </div>
+      <div style={{padding:'18px 20px'}}>
+        <div className="row-between" style={{marginBottom:14}}><div style={{fontWeight:600,fontSize:17}}>{r.name}</div><span className={"badge "+st.cls}><span className="d"></span>{st.label}</span></div>
+        <div className="detail-line"><Icon name="calendar" size={17}/><span className="dl-label">วันที่</span><b style={{fontWeight:500}}>{thFull(b.date)}</b></div>
+        <div className="detail-line"><Icon name="clock" size={17}/><span className="dl-label">เวลา</span><b style={{fontWeight:500}}>{b.s} - {b.e} ({durText(b.s,b.e)})</b></div>
+        <div className="detail-line"><Icon name="users" size={17}/><span className="dl-label">ผู้เข้าร่วม</span><b style={{fontWeight:500}}>{b.att} คน</b></div>
+        <div className="detail-line"><Icon name="note" size={17}/><span className="dl-label">หัวข้อ</span><b style={{fontWeight:500}}>{b.title}</b></div>
+        <div className="detail-line"><Icon name="user" size={17}/><span className="dl-label">ผู้จอง</span><b style={{fontWeight:500}}>{b.by}</b></div>
+        {b.link&&<div className="detail-line"><Icon name="link" size={17}/><span className="dl-label">ลิงก์</span><a href={b.link} target="_blank" style={{color:'var(--primary)',fontWeight:500,wordBreak:'break-all'}}>{b.link}</a></div>}
+        <div className="detail-line"><Icon name="tv" size={17}/><span className="dl-label">อุปกรณ์</span><b style={{fontWeight:500}}>{r.eq.map(e=>EQ_LABEL[e]).join(', ')}</b></div>
+
+        {canCheck&&canManage&&<button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>{checkIn(b.id);close();}}><Icon name="checkcircle" size={17}/>เช็คอินเข้าห้องประชุม</button>}
+        {b.checkedIn&&<div className="checkin-bar" style={{marginTop:14,marginBottom:0,background:'var(--green-bg)',borderColor:'var(--green)'}}><Icon name="checkcircle" size={18}/><span style={{fontSize:13,fontWeight:500,color:'var(--green-tx)'}}>เช็คอินเรียบร้อยแล้ว</span></div>}
+
+        {!['cancelled','released'].includes(b.status)&&(canManage
+          ? <div style={{display:'flex',gap:10,marginTop:14}}>
+              <button className="btn btn-ghost btn-block" onClick={()=>onEdit(b)}><Icon name="swap" size={15}/>แก้ไข/เลื่อน</button>
+              <button className="btn btn-danger btn-block" onClick={()=>{cancel(b.id);close();}}><Icon name="trash" size={15}/>ยกเลิกการจอง</button>
+            </div>
+          : <div className="perm-note"><Icon name="shield" size={16}/><span>เฉพาะผู้จอง ({b.by}) หรือแอดมิน/IT เท่านั้นที่แก้ไขหรือยกเลิกได้</span></div>)}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ====== APP ====== */
+function App(){
+  const [dark,setDark]=useState(false);
+  const [page,setPage]=useState('home');
+  const [user,setUser]=useState({id:'u1',name:'เต้ วราการ',nick:'เต้',dept:'IT Department',phone:'1234',isAdmin:false});
+  const [aiConfig,setAiConfig]=useState({provider:MY_AI_PROVIDER,key:MY_AI_KEY,model:''});
+  const [bookings,setBookings]=useState(()=>{const s=seed();s.forEach(b=>{if(b.autoRelease)b._releaseAt=Date.now()+45000;});return s;});
+  const [detail,setDetail]=useState(null);
+  const [editing,setEditing]=useState(null);
+  const [showProfile,setShowProfile]=useState(false);
+  const [toastMsg,setToastMsg]=useState(null);
+  const [search,setSearch]=useState('');
+  const [now,setNow]=useState(Date.now());
+  const [cursor,setCursor]=useState(TODAY);
+  const [prefill,setPrefill]=useState({});
+
+  useEffect(()=>{
+    const iv=setInterval(()=>{const t=Date.now();setNow(t);
+      setBookings(bs=>{let changed=false;const nb=bs.map(b=>{if(b.autoRelease&&b.status==='in-use'&&!b.checkedIn&&b._releaseAt&&t>=b._releaseAt){changed=true;return{...b,status:'released',autoRelease:false};}return b;});if(changed)setToastMsg({msg:'ปล่อยห้อง MUD 1 อัตโนมัติ (ไม่มีการเช็คอิน)',type:'warn'});return changed?nb:bs;});
+    },1000);return()=>clearInterval(iv);
+  },[]);
+  useEffect(()=>{if(toastMsg){const t=setTimeout(()=>setToastMsg(null),3200);return()=>clearTimeout(t);}},[toastMsg]);
+
+  const toast=(msg,type='ok')=>setToastMsg({msg,type});
+  const addBooking=b=>setBookings(bs=>[...bs,{...b,id:++_bid}]);
+  const cancelBooking=id=>{setBookings(bs=>bs.map(b=>b.id===id?{...b,status:'cancelled'}:b));toast('ยกเลิกการจองแล้ว','err');};
+  const checkIn=id=>{setBookings(bs=>bs.map(b=>b.id===id?{...b,checkedIn:true,autoRelease:false}:b));toast('เช็คอินสำเร็จ','ok');};
+  const editBooking=(id,patch)=>setBookings(bs=>bs.map(b=>b.id===id?{...b,...patch}:b));
+  const go=p=>{setPage(p);setSearch('');};
+  const openForm=pf=>{setPrefill(pf||{});setPage('form');};
+
+  const ti={ok:'checkcircle',warn:'warn',err:'x'}[toastMsg?.type||'ok'];
+
+  return(
+    <div className="app" data-theme={dark?'dark':'light'}>
+      <Sidebar page={page} go={go} user={user} openProfile={()=>setShowProfile(true)}/>
+      <div className="main">
+        <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user}/>
+        <div className="scroll">
+          {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm}/>}
+          {page==='form'&&<BookingForm key={JSON.stringify(prefill)} bookings={bookings} addBooking={addBooking} toast={toast} user={user} go={go} prefill={prefill} clearPrefill={()=>setPrefill({})}/>}
+          {page==='book'&&<ChatBot bookings={bookings} toast={toast} openForm={openForm} go={go} aiConfig={aiConfig}/>}
+          {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
+          {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
+          {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
+          {page==='reports'&&<ReportsPage/>}
+          {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} aiConfig={aiConfig} setAiConfig={setAiConfig}/>}
+        </div>
+      </div>
+      <MobileNav page={page} go={go}/>
+      {detail&&<BookingDetail b={bookings.find(x=>x.id===detail.id)||detail} close={()=>setDetail(null)} cancel={cancelBooking} checkIn={checkIn} user={user} onEdit={b=>{setDetail(null);setEditing(b);}}/>}
+      {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
+      {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast}/>}
+      {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
