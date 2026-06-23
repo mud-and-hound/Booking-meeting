@@ -332,6 +332,31 @@ select.inp{cursor:pointer}
 .auth-err{background:var(--red-bg);border:1px solid var(--red);color:var(--red-tx);border-radius:10px;padding:10px 13px;font-size:12.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .auth-hint{background:var(--info-bg);border:1px solid var(--info);color:var(--info-tx);border-radius:10px;padding:10px 13px;font-size:12px;margin-top:18px;line-height:1.6}
 .auth-row{display:flex;gap:10px}.auth-row .auth-field{flex:1}
+
+/* ===== skeleton loading (shimmer) ===== */
+.skeleton{position:relative;overflow:hidden;background:var(--surface-2);border-radius:8px}
+.skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);animation:shimmer 1.3s infinite}
+[data-theme="light"] .skeleton::after{background:linear-gradient(90deg,transparent,rgba(0,0,0,.045),transparent)}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.sk-wrap{padding:4px 2px}
+.sk-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+.sk-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.sk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:760px){.sk-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== saving overlay ===== */
+.saving-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(10,13,20,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:ovFade .15s}
+[data-theme="light"] .saving-overlay{background:rgba(30,41,59,.32)}
+@keyframes ovFade{from{opacity:0}to{opacity:1}}
+.saving-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px 36px;display:flex;flex-direction:column;align-items:center;gap:15px;box-shadow:var(--shadow-lg);animation:savePop .2s var(--ease,cubic-bezier(.4,0,.2,1))}
+@keyframes savePop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.saving-box .stext{font-size:13.5px;color:var(--text);font-weight:500}
+
+/* ===== success pop (ติ๊กถูกเขียว มินิมอล เฟดเข้า-ออก) ===== */
+.success-pop{position:fixed;inset:0;z-index:1100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;animation:successFade 1.5s ease forwards}
+.success-ring{width:82px;height:82px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;color:var(--green-tx)}
+.success-pop .smsg{font-size:14px;font-weight:600;color:var(--text);background:var(--surface);padding:8px 18px;border-radius:22px;border:1px solid var(--border);box-shadow:var(--shadow)}
+@keyframes successFade{0%{opacity:0;transform:scale(.92)}14%{opacity:1;transform:scale(1)}82%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -345,7 +370,7 @@ const {useState,useEffect,useRef,useMemo}=React;
    - รูปแบบ: https://script.google.com/macros/s/XXXXXXXX/exec
    - คีย์ AI ไม่ฝังในไฟล์แล้ว → ดึงจากชีต _AIKeys (ปลอด GitHub secret scanning)
    ============================================================ */
-const API_URL = "https://script.google.com/macros/s/AKfycbyAvbbjRUHmKJxTip0vf3Z06Nufab7xkyuF9Z7zYV0zgVbXtjUvI-xIGZdqYQJfj0aUtw/exec";
+const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
 /* เก็บ session login ในเบราว์เซอร์ (ห่อ try-catch กัน error เวลาพรีวิว/sandbox) */
 const _mem = {};
@@ -713,9 +738,7 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
   const submit=(status)=>{
     if(!valid){toast('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม','err');return;}
     if(status!=='draft'&&conflict){toast('ช่วงเวลานี้ชนกับการจองอื่น','err');return;}
-    addBooking({room:roomId,date,s,e,title:title||'การประชุมใหม่',att:Number(att)||ROOM(roomId).cap,owner:user.id,by:user.name,link,status,checkedIn:false});
-    toast(status==='draft'?'บันทึกร่างแล้ว':'จองห้อง '+ROOM(roomId).name+' สำเร็จ','ok');
-    go(status==='draft'?'mine':'calendar');
+    addBooking({room:roomId,date,s,e,title:title||'การประชุมใหม่',att:Number(att)||ROOM(roomId).cap,owner:user.id,by:user.name,link,status,checkedIn:false}, status==='draft'?'mine':'calendar');
   };
   return(
     <div className="form-wrap">
@@ -1186,6 +1209,46 @@ function BootScreen({error,onRetry}){
   return(<div className="boot"><div className="spinner"></div><div className="boot-text">กำลังโหลดข้อมูล...</div></div>);
 }
 
+/* ====== SKELETON / OVERLAY / SUCCESS ====== */
+function SkBlock({w,h,r,style}){ return <div className="skeleton" style={{width:w,height:h,borderRadius:r||6,...(style||{})}}/>; }
+
+/* โครงเนื้อหา (ใช้ตอน reload หลังบันทึก — แทน content area) */
+function SkeletonContent(){
+  return(<div className="sk-wrap">
+    <div className="sk-grid">
+      {[0,1,2,3].map(i=><div className="sk-stat" key={i}><SkBlock w="38px" h="38px" r="11px"/><SkBlock w="55%" h="11px"/><SkBlock w="42%" h="20px"/></div>)}
+    </div>
+    {[0,1,2,3].map(i=><div className="sk-card" key={i}>
+      <SkBlock w="46px" h="46px" r="12px"/>
+      <div style={{flex:1,display:'flex',flexDirection:'column',gap:9}}><SkBlock w="40%" h="13px"/><SkBlock w="62%" h="10px"/></div>
+      <SkBlock w="72px" h="24px" r="20px"/>
+    </div>)}
+  </div>);
+}
+
+/* โครงเต็มจอ (ใช้ตอนเปิดเว็บครั้งแรก — sidebar จริง + content skeleton) */
+function SkeletonScreen(){
+  const dark=(typeof document!=='undefined'&&document.documentElement.getAttribute('data-theme'))||'light';
+  const wb={background:'rgba(255,255,255,.14)',borderRadius:8};
+  return(<div className="app" data-theme={dark}>
+    <aside className="sidebar">
+      <div style={{display:'flex',alignItems:'center',gap:11,marginBottom:18,padding:'0 4px'}}>
+        <div style={{width:40,height:40,...wb,borderRadius:11}}/>
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}><div style={{width:'70%',height:11,...wb}}/><div style={{width:'45%',height:8,...wb,opacity:.7}}/></div>
+      </div>
+      {[0,1,2,3,4,5,6].map(i=><div key={i} style={{height:42,borderRadius:11,background:'rgba(255,255,255,.08)',marginBottom:5}}/>)}
+    </aside>
+    <div className="main"><div style={{padding:'24px 28px'}}><SkeletonContent/></div></div>
+  </div>);
+}
+
+function SavingOverlay({text}){
+  return(<div className="saving-overlay"><div className="saving-box"><div className="spinner"></div><div className="stext">{text}</div></div></div>);
+}
+function SuccessCheck({msg}){
+  return(<div className="success-pop"><div className="success-ring"><Icon name="check" size={40} sw={2.6}/></div><div className="smsg">{msg}</div></div>);
+}
+
 /* ====== LOGIN / REGISTER ====== */
 function AuthScreen({onLogin}){
   const [mode,setMode]=useState('login');
@@ -1243,6 +1306,9 @@ function App(){
   const [now,setNow]=useState(Date.now());
   const [cursor,setCursor]=useState(TODAY);
   const [prefill,setPrefill]=useState({});
+  const [refreshing,setRefreshing]=useState(false); // skeleton ตอน reload หลังบันทึก
+  const [saving,setSaving]=useState(null);           // overlay ระหว่างบันทึก {text}
+  const [successMsg,setSuccessMsg]=useState(null);   // ติ๊กถูกเขียวกลางจอ
 
   const toast=(msg,type='ok')=>setToastMsg({msg,type});
 
@@ -1275,35 +1341,57 @@ function App(){
     },1000);return()=>clearInterval(iv);
   },[]);
   useEffect(()=>{if(toastMsg){const t=setTimeout(()=>setToastMsg(null),3200);return()=>clearTimeout(t);}},[toastMsg]);
+  useEffect(()=>{if(successMsg){const t=setTimeout(()=>setSuccessMsg(null),1500);return()=>clearTimeout(t);}},[successMsg]);
 
   // ── auth ──
   const onLogin=u=>{const su=shapeUser(u);setUser(su);safeStore.set('mrb_user',JSON.stringify(su));toast('ยินดีต้อนรับ '+su.nick,'ok');};
   const logout=()=>{safeStore.del('mrb_user');setUser(null);setPage('home');};
 
-  // ── booking actions (เรียก API → reload จาก sheet) ──
-  const addBooking=async b=>{
-    try{await apiWrite({action:'saveBooking',booking:{room:b.room,date:b.date,start:b.s,end:b.e,title:b.title,att:b.att,owner:b.owner,by:b.by,link:b.link,status:b.status}});toast('บันทึกการจองเรียบร้อย','ok');await reload();}
-    catch(e){toast(e.message,'err');throw e;}
+  // ── flow บันทึกกลาง: overlay (กำลังบันทึก) → skeleton (reload) → ติ๊กถูกเขียว ──
+  const runSave=async({text,fn,ok,before,dest})=>{
+    if(before)before();              // ปิด modal ที่เปิดอยู่ก่อน (ถ้ามี)
+    setSaving({text});               // overlay "กำลังบันทึก..."
+    try{
+      await fn();                    // เขียน Sheet จริง (รอจริง)
+      setSaving(null);               // ปิด overlay
+      if(dest)go(dest);              // ไปหน้าปลายทางก่อน reload (ออกจากฟอร์ม)
+      setRefreshing(true);           // โครง skeleton ระหว่างดึงข้อมูลใหม่
+      await reload();
+      setRefreshing(false);
+      setSuccessMsg(ok);             // ติ๊กถูกเขียวกลางจอ
+      return true;
+    }catch(e){
+      setSaving(null); setRefreshing(false);
+      toast(e.message,'err');        // ล้มเหลว → toast แดง (ไม่ขึ้นติ๊กเขียว)
+      return false;
+    }
   };
-  const cancelBooking=async id=>{
-    try{await apiWrite({action:'cancelBooking',bookingId:id});toast('ยกเลิกการจองแล้ว','err');await reload();}
-    catch(e){toast(e.message,'err');}
+
+  // ── booking actions ──
+  const addBooking=(b,dest)=>runSave({
+    text:'กำลังบันทึกการจอง...', dest:dest,
+    ok:b.status==='draft'?'บันทึกร่างแล้ว':'จองห้องสำเร็จ',
+    fn:()=>apiWrite({action:'saveBooking',booking:{room:b.room,date:b.date,start:b.s,end:b.e,title:b.title,att:b.att,owner:b.owner,by:b.by,link:b.link,status:b.status}})
+  });
+  const cancelBooking=id=>runSave({
+    text:'กำลังยกเลิกการจอง...', before:()=>setDetail(null), ok:'ยกเลิกการจองแล้ว',
+    fn:()=>apiWrite({action:'cancelBooking',bookingId:id})
+  });
+  const checkIn=id=>{
+    setBookings(bs=>bs.map(b=>b.id===id?{...b,checkedIn:true,autoRelease:false}:b)); // optimistic หยุด countdown ระหว่างรอ
+    return runSave({ text:'กำลังเช็คอิน...', before:()=>setDetail(null), ok:'เช็คอินสำเร็จ',
+      fn:()=>apiWrite({action:'checkIn',bookingId:id}) });
   };
-  const checkIn=async id=>{
-    setBookings(bs=>bs.map(b=>b.id===id?{...b,checkedIn:true,autoRelease:false}:b)); // optimistic หยุด countdown
-    try{await apiWrite({action:'checkIn',bookingId:id});toast('เช็คอินสำเร็จ','ok');}
-    catch(e){toast(e.message,'err');await reload();}
-  };
-  const editBooking=async(id,patch)=>{
-    try{await apiWrite({action:'editBooking',bookingId:id,patch:patch});toast('แก้ไขการจองแล้ว','ok');await reload();}
-    catch(e){toast(e.message,'err');}
-  };
+  const editBooking=(id,patch)=>runSave({
+    text:'กำลังแก้ไขการจอง...', before:()=>setEditing(null), ok:'แก้ไขการจองแล้ว',
+    fn:()=>apiWrite({action:'editBooking',bookingId:id,patch:patch})
+  });
   const go=p=>{setPage(p);setSearch('');};
   const openForm=pf=>{setPrefill(pf||{});setPage('form');};
 
   // ── render gate ──
   if(bootError)return <BootScreen error={bootError} onRetry={loadData}/>;
-  if(!ready)return <BootScreen/>;
+  if(!ready)return <SkeletonScreen/>;
   if(!user)return <AuthScreen onLogin={onLogin}/>;
 
   const ti={ok:'checkcircle',warn:'warn',err:'x'}[toastMsg?.type||'ok'];
@@ -1314,6 +1402,7 @@ function App(){
       <div className="main">
         <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user}/>
         <div className="scroll">
+          {refreshing ? <SkeletonContent/> : <>
           {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm}/>}
           {page==='form'&&<BookingForm key={JSON.stringify(prefill)} bookings={bookings} addBooking={addBooking} toast={toast} user={user} go={go} prefill={prefill} clearPrefill={()=>setPrefill({})}/>}
           {page==='book'&&<ChatBot bookings={bookings} toast={toast} openForm={openForm} go={go} aiConfig={aiConfig}/>}
@@ -1322,12 +1411,15 @@ function App(){
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
           {page==='reports'&&<ReportsPage/>}
           {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} aiConfig={aiConfig} setAiConfig={setAiConfig} logout={logout}/>}
+          </>}
         </div>
       </div>
       <MobileNav page={page} go={go}/>
       {detail&&<BookingDetail b={bookings.find(x=>x.id===detail.id)||detail} close={()=>setDetail(null)} cancel={cancelBooking} checkIn={checkIn} user={user} onEdit={b=>{setDetail(null);setEditing(b);}}/>}
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
+      {saving&&<SavingOverlay text={saving.text}/>}
+      {successMsg&&<SuccessCheck msg={successMsg}/>}
       {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
     </div>
   );
