@@ -303,6 +303,35 @@ select.inp{cursor:pointer}
 .tbl th{text-align:left;font-size:11.5px;color:var(--text-muted);font-weight:500;padding:9px 8px;border-bottom:1px solid var(--border)}
 .tbl td{font-size:13px;padding:11px 8px;border-bottom:1px solid var(--border)}.tbl tr:last-child td{border-bottom:none}
 .rank{width:24px;height:24px;border-radius:7px;background:var(--primary-soft);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:12px}
+
+/* ===== loading / auth screens ===== */
+.boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg);z-index:999}
+.spinner{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.boot-text{font-size:13.5px;color:var(--text-muted)}
+.boot-err{max-width:440px;text-align:center;padding:0 20px}
+.boot-err .e-title{font-size:16px;font-weight:600;color:var(--red-tx);margin-bottom:8px}
+.boot-err .e-msg{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:16px;word-break:break-word}
+
+.auth-wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,var(--sb-from),var(--sb-to));overflow-y:auto}
+.auth-card{background:var(--surface);border-radius:20px;box-shadow:var(--shadow-lg);width:100%;max-width:400px;padding:30px 28px;margin:auto}
+.auth-logo{width:54px;height:54px;border-radius:15px;background:linear-gradient(135deg,#3B82F6,#1E40AF);display:flex;align-items:center;justify-content:center;color:#fff;margin:0 auto 16px;box-shadow:0 8px 22px rgba(37,99,235,.5)}
+.auth-title{text-align:center;font-size:20px;font-weight:600;color:var(--text)}
+.auth-sub{text-align:center;font-size:12.5px;color:var(--text-muted);margin-top:5px;margin-bottom:22px}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:12.5px;font-weight:500;color:var(--text);margin-bottom:6px}
+.auth-field label .req{color:var(--red);margin-left:2px}
+.auth-input{width:100%;border:1.5px solid var(--border-strong);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--surface-2);color:var(--text);transition:.16s}
+.auth-input:focus{outline:none;border-color:var(--primary);background:var(--surface)}
+.auth-input::placeholder{color:var(--text-faint)}
+.auth-btn{width:100%;margin-top:6px;padding:12px;border-radius:10px;font-size:14px;font-weight:600;background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(37,99,235,.35);transition:.16s}
+.auth-btn:hover{background:var(--primary-600)}.auth-btn:active{transform:scale(.97)}
+.auth-btn:disabled{opacity:.55;cursor:not-allowed}
+.auth-switch{text-align:center;font-size:13px;color:var(--text-muted);margin-top:18px}
+.auth-switch b{color:var(--primary);cursor:pointer;font-weight:600}.auth-switch b:hover{text-decoration:underline}
+.auth-err{background:var(--red-bg);border:1px solid var(--red);color:var(--red-tx);border-radius:10px;padding:10px 13px;font-size:12.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.auth-hint{background:var(--info-bg);border:1px solid var(--info);color:var(--info-tx);border-radius:10px;padding:10px 13px;font-size:12px;margin-top:18px;line-height:1.6}
+.auth-row{display:flex;gap:10px}.auth-row .auth-field{flex:1}
 </style>
 </head>
 <body>
@@ -311,15 +340,20 @@ select.inp{cursor:pointer}
 const {useState,useEffect,useRef,useMemo}=React;
 
 /* ============================================================
-   🔑 ใส่ API KEY ตรงนี้ถ้าจะ hardcode (สะดวก ไม่ต้องพิมพ์ทุกครั้ง)
-   - วาง key เช่น "AIza..." ลงใน MY_AI_KEY แล้วบอทจะต่อให้อัตโนมัติ
-   - ปล่อยว่าง "" = ไปใส่เองในหน้าตั้งค่าแทน
-   - ⚠️⚠️ ห้าม deploy เว็บสาธารณะ หรือ push ขึ้น GitHub พร้อม key นี้
-            (บอทสแกนเจอ key แล้วเอาไปใช้จนโดนแบน/บิลบานได้ในไม่กี่นาที)
-   - ใช้เฉพาะรันไฟล์ในเครื่องตัวเองเพื่อทดลองเท่านั้น
+   ⚙️ ตั้งค่าการเชื่อมต่อ Google Sheet (Apps Script Web App)
+   - วาง Web App URL ที่ได้จากขั้นตอน Deploy ลงใน API_URL ด้านล่าง
+   - รูปแบบ: https://script.google.com/macros/s/XXXXXXXX/exec
+   - คีย์ AI ไม่ฝังในไฟล์แล้ว → ดึงจากชีต _AIKeys (ปลอด GitHub secret scanning)
    ============================================================ */
-const MY_AI_KEY = "AQ.Ab8RN6LCvllXh8qV33JrsbpbOc5T0ofrUHT4ky1Z_OX6PacoUg";  // <-- key ของเต้ (ทดสอบแล้วใช้ได้)
-const MY_AI_PROVIDER = "gemini"; // gemini | openai | groq
+const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+
+/* เก็บ session login ในเบราว์เซอร์ (ห่อ try-catch กัน error เวลาพรีวิว/sandbox) */
+const _mem = {};
+const safeStore = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return _mem[k]||null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){ _mem[k]=v; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){ delete _mem[k]; } }
+};
 
 
 /* ====== ICONS ====== */
@@ -363,54 +397,20 @@ function Icon({name,size=18,sw=1.8}){
     swap:<><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></>,
     save:<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></>,
     warn:<><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></>,
+    logout:<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></>,
   };
   return <svg {...p}>{M[name]||null}</svg>;
 }
 
-/* ====== DATA ====== */
-const ROOMS=[
-  {id:'A',name:'MUD 1',cap:12,eq:['tv','projector','board'],g:['#3B82F6','#1D4ED8']},
-  {id:'B',name:'MUD 2',cap:20,eq:['tv','video','board'],g:['#0EA5A5','#0F766E']},
-  {id:'C',name:'MUD 3',cap:8,eq:['tv','board'],g:['#8B5CF6','#6D28D9']},
-  {id:'BR',name:'Board Room',cap:16,eq:['tv','video','board'],g:['#334155','#0F172A']},
-  {id:'D',name:'MUD 4',cap:6,eq:['tv','board'],g:['#F59E0B','#D97706']},
-  {id:'TR',name:'Training Room',cap:30,eq:['tv','projector','video'],g:['#EC4899','#BE185D']},
-];
+/* ====== DATA (โหลดจาก Google Sheet) ====== */
+let ROOMS=[];   // โหลดจากชีต _Rooms ตอนเปิดเว็บ
+// วันนี้จริง (คำนวณ inline ไม่พึ่ง helper ด้านล่าง) — boot จะอัปเดตจาก server อีกที
+let TODAY=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
 const EQ_LABEL={tv:'TV',projector:'Projector',video:'Video Conf',board:'Whiteboard'};
-const ROOM=id=>ROOMS.find(r=>r.id===id);
-const TODAY='2026-06-18';
+const ROOM=id=>ROOMS.find(r=>r.id===id)||{id:id,name:id,cap:0,eq:[],g:['#64748B','#334155']};
 const DAY_START=8*60, DAY_END=20*60;
 
-let _bid=100;
-const seed=()=>[
-  {id:++_bid,room:'A',date:'2026-06-18',s:'09:00',e:'10:30',title:'Weekly Team Meeting',att:12,owner:'u1',by:'เต้ วราการ',link:'https://zoom.us/j/123',status:'in-use',checkedIn:false,autoRelease:true},
-  {id:++_bid,room:'A',date:'2026-06-18',s:'13:00',e:'14:30',title:'Planning',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
-  {id:++_bid,room:'B',date:'2026-06-18',s:'10:00',e:'11:30',title:'Marketing Discussion',att:14,owner:'u3',by:'วราภรณ์',status:'confirmed'},
-  {id:++_bid,room:'B',date:'2026-06-18',s:'15:00',e:'16:30',title:'Project Review',att:10,owner:'u4',by:'ธนกร',status:'pending'},
-  {id:++_bid,room:'C',date:'2026-06-18',s:'09:00',e:'10:00',title:'Interview',att:3,owner:'u5',by:'HR',status:'cancelled'},
-  {id:++_bid,room:'BR',date:'2026-06-18',s:'13:30',e:'15:00',title:'Project Update',att:12,owner:'u1',by:'เต้ วราการ',link:'https://zoom.us/j/456',status:'confirmed'},
-  {id:++_bid,room:'TR',date:'2026-06-18',s:'09:30',e:'12:00',title:'New Hire Onboarding',att:25,owner:'u6',by:'L&D',status:'confirmed'},
-  // other days for week/month
-  {id:++_bid,room:'A',date:'2026-06-19',s:'10:00',e:'11:00',title:'Sprint Review',att:9,owner:'u1',by:'เต้ วราการ',status:'confirmed'},
-  {id:++_bid,room:'B',date:'2026-06-19',s:'14:00',e:'15:30',title:'Vendor Call',att:5,owner:'u3',by:'วราภรณ์',status:'pending'},
-  {id:++_bid,room:'BR',date:'2026-06-17',s:'09:00',e:'10:30',title:'Exec Sync',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-20',s:'09:00',e:'10:00',title:'1:1',att:2,owner:'u1',by:'เต้ วราการ',status:'confirmed'},
-  {id:++_bid,room:'C',date:'2026-06-23',s:'13:00',e:'14:00',title:'Design Crit',att:6,owner:'u3',by:'วราภรณ์',status:'confirmed'},
-  {id:++_bid,room:'B',date:'2026-06-25',s:'10:00',e:'12:00',title:'All Hands',att:30,owner:'u6',by:'L&D',status:'confirmed'},
-  // MUD 1 (room A) — เลียนแบบตารางจริงเดือน มิ.ย. 2569
-  {id:++_bid,room:'A',date:'2026-06-02',s:'12:00',e:'15:00',title:'DD HD Meeting',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-08',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-09',s:'13:00',e:'14:00',title:'DD HD Meeting',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-10',s:'09:00',e:'11:00',title:'Brand Meet (NUT GHF)',att:10,owner:'u3',by:'NUT',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-11',s:'10:00',e:'11:00',title:'DD Meeting',att:5,owner:'u1',by:'เต้ วราการ',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-15',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-17',s:'09:00',e:'11:00',title:'Brand Meet (NUT GHF)',att:10,owner:'u3',by:'NUT',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-22',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-24',s:'13:00',e:'15:00',title:'ABP Training: CRM',att:12,owner:'u6',by:'L&D',status:'confirmed'},
-  {id:++_bid,room:'A',date:'2026-06-29',s:'10:00',e:'11:00',title:'Senior (NUT GHF)',att:6,owner:'u3',by:'NUT',status:'confirmed'},
-  {id:++_bid,room:'BR',date:'2026-06-09',s:'14:00',e:'15:00',title:'MUD BOD',att:8,owner:'u2',by:'สมชาย',status:'confirmed'},
-  {id:++_bid,room:'B',date:'2026-06-12',s:'14:00',e:'16:00',title:'Salary HR',att:6,owner:'u4',by:'HR',status:'confirmed'},
-];
+let _bid=0; // ตัวนับ booking id ชั่วคราว (optimistic ก่อน reload จาก sheet)
 
 const STATUS={
   confirmed:{label:'ยืนยันแล้ว',cls:'b-green',bar:'var(--green)'},
@@ -968,7 +968,7 @@ function ReportsPage(){
 }
 
 /* ====== SETTINGS ====== */
-function SettingsPage({dark,setDark,user,setUser,openProfile,aiConfig,setAiConfig}){
+function SettingsPage({dark,setDark,user,setUser,openProfile,aiConfig,setAiConfig,logout}){
   const [notif,setNotif]=useState(true),[auto,setAuto]=useState(true),[reminder,setReminder]=useState(true);
   const [testing,setTesting]=useState(false),[testResult,setTestResult]=useState(null);
   const prov=AI_PROVIDERS[aiConfig.provider];
@@ -1013,7 +1013,7 @@ function SettingsPage({dark,setDark,user,setUser,openProfile,aiConfig,setAiConfi
           {aiConfig.key&&<button className="btn btn-ghost" onClick={()=>{setAiConfig(c=>({...c,key:''}));setTestResult(null);}}><Icon name="x" size={14}/>ล้าง key</button>}
         </div>
         {testResult&&<div className={"conflict-warn"} style={{background:testResult.ok?'var(--green-bg)':'var(--red-bg)',borderColor:testResult.ok?'var(--green)':'var(--red)',color:testResult.ok?'var(--green-tx)':'var(--red-tx)'}}><Icon name={testResult.ok?'checkcircle':'warn'} size={16}/><span>{testResult.msg}</span></div>}
-        <div className="perm-note"><Icon name="warn" size={16}/><span>โหมดทดลองเท่านั้น: key เก็บในเบราว์เซอร์ชั่วคราว (refresh แล้วต้องใส่ใหม่) และจะถูกส่งจากหน้าเว็บตรงไปยังผู้ให้บริการ — <b>อย่านำไป deploy สาธารณะพร้อม key จริง</b> ของจริงต้องซ่อน key ไว้ฝั่ง backend</span></div>
+        <div className="perm-note"><Icon name="warn" size={16}/><span>คีย์หลักดึงจากชีต <b>_AIKeys</b> อัตโนมัติ — ช่องด้านบนใช้ override ชั่วคราวในเครื่องนี้เพื่อทดสอบเท่านั้น (refresh แล้วกลับไปใช้ค่าจากชีต) หากต้องการเปลี่ยนถาวรให้แก้ในชีต</span></div>
       </div>
     </div>
 
@@ -1025,11 +1025,19 @@ function SettingsPage({dark,setDark,user,setUser,openProfile,aiConfig,setAiConfi
       <div className="set-row"><div className="set-ic"><Icon name="clock" size={18}/></div><div className="set-body"><div className="t">ปล่อยห้องอัตโนมัติ</div><div className="d">ปล่อยห้องคืนถ้าไม่เช็คอินภายใน 15 นาที</div></div><div className={"switch"+(auto?' on':'')} onClick={()=>setAuto(v=>!v)}></div></div>
       <div className="set-row"><div className="set-ic"><Icon name="sparkle" size={18}/></div><div className="set-body"><div className="t">เตือนก่อนประชุม 10 นาที</div><div className="d">ส่ง reminder ผ่านอีเมล/แอป</div></div><div className={"switch"+(reminder?' on':'')} onClick={()=>setReminder(v=>!v)}></div></div>
     </div>
+
+    <div className="card pad" style={{marginTop:16}}>
+      <div className="set-row" style={{cursor:'pointer'}} onClick={logout}>
+        <div className="set-ic" style={{color:'var(--red-tx)',background:'var(--red-bg)'}}><Icon name="logout" size={18}/></div>
+        <div className="set-body"><div className="t" style={{color:'var(--red-tx)'}}>ออกจากระบบ</div><div className="d">ล็อกเอาต์บัญชี {user.name} ({user.id})</div></div>
+        <Icon name="cright" size={16}/>
+      </div>
+    </div>
   </div>);
 }
 
 /* ====== PROFILE MODAL (register/edit member) ====== */
-function ProfileModal({user,setUser,close,toast}){
+function ProfileModal({user,setUser,close,toast,logout}){
   const [f,setF]=useState({...user});
   const save=()=>{if(!f.name.trim()||!f.nick.trim()){toast('กรุณากรอกชื่อ-สกุล และชื่อเล่น','err');return;}setUser(u=>({...u,...f}));toast('บันทึกข้อมูลสมาชิกแล้ว','ok');close();};
   const F=(k,label,ph,req,icon)=>(<div className="field"><label>{label}{req&&<span className="req">*</span>}</label><div className="auto-field" style={{padding:'2px 12px'}}><Icon name={icon} size={16}/><input className="inp" style={{border:'none',background:'none',padding:'10px 0'}} placeholder={ph} value={f[k]} onChange={e=>setF({...f,[k]:e.target.value})}/></div></div>);
@@ -1043,6 +1051,7 @@ function ProfileModal({user,setUser,close,toast}){
           {F('dept','แผนก','เช่น IT Department',false,'building')}
           {F('phone','เบอร์ติดต่อ (โต๊ะ/ส่วนตัว)','เช่น 1234 (เผื่อกรณีไม่สะดวกมายกเลิก)',false,'phone')}
           <button className="btn btn-primary btn-block" onClick={save}><Icon name="check" size={16}/>บันทึกข้อมูลสมาชิก</button>
+          {logout&&<button className="btn btn-block" style={{border:'1px solid var(--red)',color:'var(--red-tx)',background:'var(--red-bg)'}} onClick={()=>{close();logout();}}><Icon name="logout" size={16}/>ออกจากระบบ</button>}
         </div>
       </div>
     </div>
@@ -1107,13 +1116,125 @@ function BookingDetail({b,close,cancel,checkIn,user,onEdit}){
   </div>);
 }
 
+/* ============================================================
+   API LAYER — เชื่อม Google Apps Script ผ่าน JSONP (เลี่ยง CORS)
+   - onload detection: กัน infinite spinner (callback ไม่ยิงใน 1.5s = response ผิดรูปแบบ)
+   - retry อัตโนมัติ 1 ครั้ง เฉพาะ network/timeout (ไม่ retry business error เช่นชนเวลา)
+   ============================================================ */
+let _jsonpId=0;
+function jsonp(params){
+  return new Promise((resolve,reject)=>{
+    if(!API_URL || API_URL.indexOf('PASTE_YOUR')===0){
+      reject(new Error('ยังไม่ได้ตั้งค่า API_URL — เปิดไฟล์ HTML แล้ววาง Web App URL ในตัวแปร API_URL ด้านบนสุด'));
+      return;
+    }
+    const cb='mrcb_'+(++_jsonpId)+'_'+Date.now();
+    const s=document.createElement('script');
+    let done=false;
+    const finish=(fn,arg)=>{ if(done)return; done=true; cleanup(); fn(arg); };
+    const cleanup=()=>{ clearTimeout(timer); try{delete window[cb];}catch(e){window[cb]=undefined;} if(s&&s.parentNode)s.parentNode.removeChild(s); };
+    const timer=setTimeout(()=>finish(reject,new Error('หมดเวลาเชื่อมต่อ (timeout) — ลองใหม่อีกครั้ง')),15000);
+    window[cb]=(resp)=>finish(resolve,resp);
+    s.onerror=()=>finish(reject,new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ (เช็ค URL / สิทธิ์ Deploy = Anyone)'));
+    // script โหลดเสร็จแต่ callback ไม่ทำงานใน 1.5s = response ไม่ใช่ JSONP → reject ทันที (กันค้าง)
+    s.onload=()=>{ setTimeout(()=>finish(reject,new Error('เซิร์ฟเวอร์ตอบผิดรูปแบบ — เช็ค Deploy เป็น Web App + Who has access: Anyone')),1500); };
+    const qs=Object.keys(params).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(params[k])).join('&');
+    s.src=API_URL+'?'+qs+'&callback='+cb;
+    document.body.appendChild(s);
+  });
+}
+async function apiGetAll(){ const r=await jsonp({action:'getAll'}); if(!r.ok)throw new Error(r.error||'โหลดข้อมูลไม่สำเร็จ'); return r.data; }
+async function apiLogin(userId,password){ const r=await jsonp({action:'login',userId:userId,password:password}); if(!r.ok)throw new Error(r.error||'เข้าสู่ระบบไม่สำเร็จ'); return r.data.user; }
+async function apiRegister(user){ const r=await jsonp({payload:JSON.stringify({action:'register',user:user})}); if(!r.ok)throw new Error(r.error||'สมัครสมาชิกไม่สำเร็จ'); return r.data.user; }
+/* WRITE — ส่ง payload ผ่าน GET (JSONP) + retry 1 ครั้งเฉพาะ network/timeout */
+async function apiWrite(payload){
+  const body=JSON.stringify(payload), act=payload.action||'?', t0=Date.now();
+  console.log('%c[MRB] ⬆ '+act,'color:#3b82f6', new Date().toLocaleTimeString());
+  let r;
+  try{ r=await jsonp({payload:body}); }
+  catch(netErr){
+    console.warn('%c[MRB] ⚠ retry '+act,'color:#f59e0b','—',netErr.message);
+    await new Promise(res=>setTimeout(res,600));
+    r=await jsonp({payload:body});   // ถ้าพังอีกรอบ ปล่อย error เด้งออกไป
+  }
+  if(!r.ok){ console.error('%c[MRB] ✗ '+act,'color:#dc2626','—',r.error); throw new Error(r.error||'บันทึกไม่สำเร็จ'); }
+  console.log('%c[MRB] ✓ '+act,'color:#16a34a', ((Date.now()-t0)/1000).toFixed(2)+'s');
+  return r.data;
+}
+
+
+/* แปลงข้อมูล user จาก sheet → object ที่ UI ใช้ (เติม nick/phone ที่ UI ต้องการ) */
+function shapeUser(u){
+  return {
+    id:u.id, name:u.name,
+    nick:(u.name||'?').trim().split(/\s+/)[0]||'?',
+    dept:u.dept||'', phone:'',
+    role:u.role||'member',
+    isAdmin:!!u.isAdmin || u.role==='admin'
+  };
+}
+
+/* ====== BOOT / LOADING SCREEN ====== */
+function BootScreen({error,onRetry}){
+  if(error){
+    return(<div className="boot"><div className="boot-err">
+      <div className="e-title">⚠️ เชื่อมต่อไม่สำเร็จ</div>
+      <div className="e-msg">{error}</div>
+      <button className="btn btn-primary" onClick={onRetry}><Icon name="swap" size={15}/>ลองใหม่</button>
+    </div></div>);
+  }
+  return(<div className="boot"><div className="spinner"></div><div className="boot-text">กำลังโหลดข้อมูล...</div></div>);
+}
+
+/* ====== LOGIN / REGISTER ====== */
+function AuthScreen({onLogin}){
+  const [mode,setMode]=useState('login');
+  const [userId,setUserId]=useState('');
+  const [pwd,setPwd]=useState('');
+  const [name,setName]=useState('');
+  const [dept,setDept]=useState('');
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState('');
+
+  const doLogin=async()=>{
+    if(!userId||!pwd){setErr('กรอก User ID และรหัสผ่าน');return;}
+    setBusy(true);setErr('');
+    try{ const u=await apiLogin(userId.trim(),pwd); onLogin(u); }
+    catch(e){ setErr(e.message); setBusy(false); }
+  };
+  const doRegister=async()=>{
+    if(!userId||!pwd||!name){setErr('กรอก User ID, รหัสผ่าน และชื่อที่แสดง');return;}
+    setBusy(true);setErr('');
+    try{ const u=await apiRegister({userId:userId.trim(),password:pwd,displayName:name.trim(),dept:dept.trim(),role:'member'}); onLogin(u); }
+    catch(e){ setErr(e.message); setBusy(false); }
+  };
+  const submit=mode==='login'?doLogin:doRegister;
+  const onEnter=e=>{ if(e.key==='Enter')submit(); };
+
+  return(<div className="auth-wrap"><div className="auth-card">
+    <div className="auth-logo"><Icon name="calendar" size={26}/></div>
+    <div className="auth-title">{mode==='login'?'เข้าสู่ระบบ':'สมัครสมาชิก'}</div>
+    <div className="auth-sub">ระบบจองห้องประชุม · Meeting Room Booking</div>
+    {err&&<div className="auth-err"><Icon name="warn" size={15}/><span>{err}</span></div>}
+    {mode==='register'&&<div className="auth-field"><label>ชื่อที่แสดง<span className="req">*</span></label><input className="auth-input" placeholder="เช่น เต้ วราการ" value={name} onChange={e=>setName(e.target.value)} onKeyDown={onEnter}/></div>}
+    <div className="auth-field"><label>User ID<span className="req">*</span></label><input className="auth-input" placeholder="ชื่อผู้ใช้สำหรับล็อกอิน" value={userId} onChange={e=>setUserId(e.target.value)} onKeyDown={onEnter} autoComplete="username"/></div>
+    <div className="auth-field"><label>รหัสผ่าน<span className="req">*</span></label><input className="auth-input" type="password" placeholder="••••••" value={pwd} onChange={e=>setPwd(e.target.value)} onKeyDown={onEnter} autoComplete={mode==='login'?'current-password':'new-password'}/></div>
+    {mode==='register'&&<div className="auth-field"><label>แผนก</label><input className="auth-input" placeholder="เช่น IT Department (ไม่บังคับ)" value={dept} onChange={e=>setDept(e.target.value)} onKeyDown={onEnter}/></div>}
+    <button className="auth-btn" disabled={busy} onClick={submit}>{busy?'กำลังดำเนินการ...':(mode==='login'?'เข้าสู่ระบบ':'สมัครสมาชิก')}</button>
+    <div className="auth-switch">{mode==='login'?<>ยังไม่มีบัญชี? <b onClick={()=>{setMode('register');setErr('');}}>สมัครสมาชิก</b></>:<>มีบัญชีแล้ว? <b onClick={()=>{setMode('login');setErr('');}}>เข้าสู่ระบบ</b></>}</div>
+    {mode==='login'&&<div className="auth-hint">🔑 ทดลองใช้: <b>u1</b> / <b>1234</b> (แอดมิน) หรือ <b>demo</b> / <b>1234</b></div>}
+  </div></div>);
+}
+
 /* ====== APP ====== */
 function App(){
+  const [ready,setReady]=useState(false);
+  const [bootError,setBootError]=useState('');
   const [dark,setDark]=useState(false);
   const [page,setPage]=useState('home');
-  const [user,setUser]=useState({id:'u1',name:'เต้ วราการ',nick:'เต้',dept:'IT Department',phone:'1234',isAdmin:false});
-  const [aiConfig,setAiConfig]=useState({provider:MY_AI_PROVIDER,key:MY_AI_KEY,model:''});
-  const [bookings,setBookings]=useState(()=>{const s=seed();s.forEach(b=>{if(b.autoRelease)b._releaseAt=Date.now()+45000;});return s;});
+  const [user,setUser]=useState(()=>{try{const s=safeStore.get('mrb_user');return s?shapeUser(JSON.parse(s)):null;}catch(e){return null;}});
+  const [aiConfig,setAiConfig]=useState({provider:'gemini',key:'',model:''});
+  const [bookings,setBookings]=useState([]);
   const [detail,setDetail]=useState(null);
   const [editing,setEditing]=useState(null);
   const [showProfile,setShowProfile]=useState(false);
@@ -1123,20 +1244,67 @@ function App(){
   const [cursor,setCursor]=useState(TODAY);
   const [prefill,setPrefill]=useState({});
 
+  const toast=(msg,type='ok')=>setToastMsg({msg,type});
+
+  // เติม countdown ปล่อยห้องอัตโนมัติให้ booking ที่กำลังใช้แต่ยังไม่เช็คอิน (เดโม 45 วิ)
+  const prep=list=>list.map(b=>(b.status==='in-use'&&!b.checkedIn)?{...b,autoRelease:true,_releaseAt:Date.now()+45000}:b);
+
+  const loadData=async()=>{
+    setBootError('');
+    try{
+      const d=await apiGetAll();
+      ROOMS=d.rooms||[];
+      if(d.today)TODAY=d.today;
+      setCursor(c=>c||TODAY);
+      if(d.aiKey&&d.aiKey.key){setAiConfig({provider:d.aiKey.provider||'gemini',key:d.aiKey.key,model:'',name:d.aiKey.name,projectName:d.aiKey.projectName,projectNumber:d.aiKey.projectNumber});}
+      setBookings(prep(d.bookings||[]));
+      setReady(true);
+    }catch(e){ setBootError(e.message); }
+  };
+  useEffect(()=>{loadData();},[]);
+
+  const reload=async()=>{
+    try{const d=await apiGetAll();ROOMS=d.rooms||[];if(d.today)TODAY=d.today;setBookings(prep(d.bookings||[]));}
+    catch(e){toast('โหลดข้อมูลใหม่ไม่สำเร็จ: '+e.message,'err');}
+  };
+
+  // นาฬิกา + ปล่อยห้องอัตโนมัติ
   useEffect(()=>{
     const iv=setInterval(()=>{const t=Date.now();setNow(t);
-      setBookings(bs=>{let changed=false;const nb=bs.map(b=>{if(b.autoRelease&&b.status==='in-use'&&!b.checkedIn&&b._releaseAt&&t>=b._releaseAt){changed=true;return{...b,status:'released',autoRelease:false};}return b;});if(changed)setToastMsg({msg:'ปล่อยห้อง MUD 1 อัตโนมัติ (ไม่มีการเช็คอิน)',type:'warn'});return changed?nb:bs;});
+      setBookings(bs=>{let changed=false,nm='';const nb=bs.map(b=>{if(b.autoRelease&&b.status==='in-use'&&!b.checkedIn&&b._releaseAt&&t>=b._releaseAt){changed=true;nm=ROOM(b.room).name;return{...b,status:'released',autoRelease:false};}return b;});if(changed)setToastMsg({msg:'ปล่อยห้อง '+nm+' อัตโนมัติ (ไม่มีการเช็คอิน)',type:'warn'});return changed?nb:bs;});
     },1000);return()=>clearInterval(iv);
   },[]);
   useEffect(()=>{if(toastMsg){const t=setTimeout(()=>setToastMsg(null),3200);return()=>clearTimeout(t);}},[toastMsg]);
 
-  const toast=(msg,type='ok')=>setToastMsg({msg,type});
-  const addBooking=b=>setBookings(bs=>[...bs,{...b,id:++_bid}]);
-  const cancelBooking=id=>{setBookings(bs=>bs.map(b=>b.id===id?{...b,status:'cancelled'}:b));toast('ยกเลิกการจองแล้ว','err');};
-  const checkIn=id=>{setBookings(bs=>bs.map(b=>b.id===id?{...b,checkedIn:true,autoRelease:false}:b));toast('เช็คอินสำเร็จ','ok');};
-  const editBooking=(id,patch)=>setBookings(bs=>bs.map(b=>b.id===id?{...b,...patch}:b));
+  // ── auth ──
+  const onLogin=u=>{const su=shapeUser(u);setUser(su);safeStore.set('mrb_user',JSON.stringify(su));toast('ยินดีต้อนรับ '+su.nick,'ok');};
+  const logout=()=>{safeStore.del('mrb_user');setUser(null);setPage('home');};
+
+  // ── booking actions (เรียก API → reload จาก sheet) ──
+  const addBooking=async b=>{
+    try{await apiWrite({action:'saveBooking',booking:{room:b.room,date:b.date,start:b.s,end:b.e,title:b.title,att:b.att,owner:b.owner,by:b.by,link:b.link,status:b.status}});toast('บันทึกการจองเรียบร้อย','ok');await reload();}
+    catch(e){toast(e.message,'err');throw e;}
+  };
+  const cancelBooking=async id=>{
+    try{await apiWrite({action:'cancelBooking',bookingId:id});toast('ยกเลิกการจองแล้ว','err');await reload();}
+    catch(e){toast(e.message,'err');}
+  };
+  const checkIn=async id=>{
+    setBookings(bs=>bs.map(b=>b.id===id?{...b,checkedIn:true,autoRelease:false}:b)); // optimistic หยุด countdown
+    try{await apiWrite({action:'checkIn',bookingId:id});toast('เช็คอินสำเร็จ','ok');}
+    catch(e){toast(e.message,'err');await reload();}
+  };
+  const editBooking=async(id,patch)=>{
+    try{await apiWrite({action:'editBooking',bookingId:id,patch:patch});toast('แก้ไขการจองแล้ว','ok');await reload();}
+    catch(e){toast(e.message,'err');}
+  };
   const go=p=>{setPage(p);setSearch('');};
   const openForm=pf=>{setPrefill(pf||{});setPage('form');};
+
+  // ── render gate ──
+  if(bootError)return <BootScreen error={bootError} onRetry={loadData}/>;
+  if(!ready)return <BootScreen/>;
+  if(!user)return <AuthScreen onLogin={onLogin}/>;
 
   const ti={ok:'checkcircle',warn:'warn',err:'x'}[toastMsg?.type||'ok'];
 
@@ -1153,13 +1321,13 @@ function App(){
           {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
           {page==='reports'&&<ReportsPage/>}
-          {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} aiConfig={aiConfig} setAiConfig={setAiConfig}/>}
+          {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} aiConfig={aiConfig} setAiConfig={setAiConfig} logout={logout}/>}
         </div>
       </div>
       <MobileNav page={page} go={go}/>
       {detail&&<BookingDetail b={bookings.find(x=>x.id===detail.id)||detail} close={()=>setDetail(null)} cancel={cancelBooking} checkIn={checkIn} user={user} onEdit={b=>{setDetail(null);setEditing(b);}}/>}
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
-      {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast}/>}
+      {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
       {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
     </div>
   );
