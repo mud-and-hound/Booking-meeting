@@ -392,7 +392,7 @@ const {useState,useEffect,useRef,useMemo}=React;
    - รูปแบบ: https://script.google.com/macros/s/XXXXXXXX/exec
    - คีย์ AI ไม่ฝังในไฟล์แล้ว → ดึงจากชีต _AIKeys (ปลอด GitHub secret scanning)
    ============================================================ */
-const API_URL = "https://script.google.com/macros/s/AKfycbyAvbbjRUHmKJxTip0vf3Z06Nufab7xkyuF9Z7zYV0zgVbXtjUvI-xIGZdqYQJfj0aUtw/exec";
+const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
 /* เก็บ session login ในเบราว์เซอร์ (ห่อ try-catch กัน error เวลาพรีวิว/sandbox) */
 const _mem = {};
@@ -460,16 +460,32 @@ function Icon({name,size=18,sw=1.8}){
 let ROOMS=[];   // โหลดจากชีต _Rooms ตอนเปิดเว็บ
 // วันนี้จริง (คำนวณ inline ไม่พึ่ง helper ด้านล่าง) — boot จะอัปเดตจาก server อีกที
 let TODAY=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
-const EQ_LABEL={tv:'TV',projector:'Projector',video:'Video Conf',board:'Whiteboard'};
-// อุปกรณ์เสริมที่ขอยืมจาก IT (ไม่ติดห้อง — ผู้จองเลือกตอนจอง)
+// EQ_LABEL: lookup ชื่อสั้นจาก id — รองรับทั้ง preset (icon) และ free-text (ชื่อตรงๆ)
+const EQ_LABEL={tv:'TV',projector:'Projector',video:'Video Conf',board:'Whiteboard',hdmi:'HDMI',mic:'ไมค์',speaker:'ลำโพง',webcam:'Webcam'};
+const eqLabel=id=>EQ_LABEL[id]||id; // ถ้าไม่มี icon preset ก็แสดงชื่อตรงๆ
+
+// อุปกรณ์ preset สำหรับหน้า Admin (เลือกได้ + พิมพ์เพิ่มเอง)
+const EQ_PRESETS=[
+  {id:'projector', label:'Projector',    icon:'projector'},
+  {id:'board',     label:'Whiteboard',   icon:'board'},
+  {id:'hdmi',      label:'HDMI',         icon:'hdmi'},
+  {id:'tv',        label:'TV',           icon:'tv'},
+  {id:'video',     label:'Video Conf',   icon:'video'},
+  {id:'mic',       label:'ไมค์',          icon:'mic'},
+  {id:'speaker',   label:'ลำโพง',         icon:'speaker'},
+  {id:'webcam',    label:'Webcam',       icon:'webcam'},
+];
+
+// อุปกรณ์เสริมขอ IT (ตอนจอง — เฉพาะที่ไม่ติดห้อง)
 const EXTRAS_LIST=[
-  {id:'laptop',   label:'Laptop',        icon:'laptop'},
-  {id:'hdmi',     label:'HDMI / Adapter',icon:'hdmi'},
-  {id:'clicker',  label:'Clicker',       icon:'clicker'},
-  {id:'mic',      label:'ไมค์เพิ่มเติม', icon:'mic'},
-  {id:'speaker',  label:'ลำโพงพกพา',     icon:'speaker'},
-  {id:'webcam',   label:'Webcam',        icon:'webcam'},
-  {id:'extension',label:'รางปลั๊ก',      icon:'extension'},
+  {id:'projector_x', label:'Projector (เพิ่ม)',  icon:'projector'},
+  {id:'hdmi',        label:'HDMI / Adapter',     icon:'hdmi'},
+  {id:'clicker',     label:'Clicker',            icon:'clicker'},
+  {id:'mic',         label:'ไมค์เพิ่มเติม',       icon:'mic'},
+  {id:'speaker',     label:'ลำโพงพกพา',           icon:'speaker'},
+  {id:'webcam',      label:'Webcam',             icon:'webcam'},
+  {id:'laptop',      label:'Laptop',             icon:'laptop'},
+  {id:'extension',   label:'รางปลั๊ก',            icon:'extension'},
 ];
 const ROOM=id=>ROOMS.find(r=>r.id===id)||{id:id,name:id,cap:0,eq:[],g:['#64748B','#334155']};
 const DAY_START=8*60, DAY_END=20*60;
@@ -583,7 +599,7 @@ function RoomCard({room,bookings,onBook,onView,date}){
       <RoomGfx room={room} cls="sm"/>
       <h4>{room.name}</h4>
       <div className="meta-row"><Icon name="users" size={14}/><span>{room.cap} ที่นั่ง</span></div>
-      <div className="eq-row">{room.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{EQ_LABEL[e]}</span>)}</div>
+      <div className="eq-row">{room.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{eqLabel(e)}</span>)}</div>
       <div className="row-between">
         <span className={"badge "+(free?'b-green':'b-red')}><span className="d"></span>{free?'ว่าง':'ไม่ว่าง'}</span>
         {free?<button className="btn btn-primary btn-sm" onClick={()=>onBook(room)}>จองเลย</button>:<button className="btn btn-ghost btn-sm" onClick={()=>onView(room)}>ดูตาราง</button>}
@@ -666,20 +682,55 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm}){
 
 /* ====== AI ASSISTANT ====== */
 function botAnswer(text,bookings){
-  const t=text.toLowerCase();
-  const room=ROOMS.find(r=>t.includes(r.name.toLowerCase())||t.includes(r.id.toLowerCase())||(r.id==='A'&&t.includes('เอ'))||(r.id==='B'&&t.includes('บี'))||(r.id==='BR'&&t.includes('บอร์ด')));
-  const wantFree=/ว่าง|ช่วง|กี่โมง|เวลาไหน/.test(t);
-  const wantWho=/ใคร|จองอะไร|ตาราง|มีอะไร/.test(t);
-  const wantBook=/อยากจอง|ขอจอง|จองห้อง|book/.test(t)&&!wantFree&&!wantWho;
-  const wantSum=/สรุป|วันนี้|ภาพรวม|ทั้งหมด/.test(t)&&!wantFree&&!room;
-  if(wantBook)return{text:'ไปที่ฟอร์มจองได้เลยค่ะ กรอกห้อง/เวลา ระบบจะเช็คไม่ให้ชนกันให้อัตโนมัติ',action:'form'};
-  if(wantFree){
-    if(room){const gaps=freeGaps(room.id,TODAY,bookings);return{text:`ช่วงที่ว่างของ ${room.name} วันนี้ (${thShort(TODAY)}) ค่ะ — กดเพื่อจองได้เลย`,gaps:gaps.map(g=>({...g,roomId:room.id}))};}
-    const list=ROOMS.map(r=>({r,gaps:freeGaps(r.id,TODAY,bookings)})).filter(x=>x.gaps.length);
-    return{text:'ห้องที่ยังมีช่วงว่างวันนี้ค่ะ (กดช่วงเวลาเพื่อจอง)',roomGaps:list};
+  const t=text.toLowerCase().trim();
+  const room=ROOMS.find(r=>t.includes(r.name.toLowerCase())||t.includes(r.id.toLowerCase()));
+  const wantFree  =/ว่าง|ช่วงว่าง|ไม่มีคน|เวลาไหน|กี่โมง|ว่างได้/.test(t);
+  const wantWho   =/ใคร|จองอะไร|ตาราง|มีใคร|ใช้งานอยู่|มีการจอง/.test(t)&&!wantFree;
+  const wantBook  =/อยากจอง|ขอจอง|จองห้อง|จองเลย|book/.test(t)&&!wantFree&&!wantWho;
+  const wantEq    =/อุปกรณ์|projector|hdmi|whiteboard|จอ|ไมค์|ลำโพง|มีอะไรบ้าง/.test(t)&&!wantFree;
+  const wantSum   =/สรุป|ภาพรวม|ทั้งหมด/.test(t)&&!wantFree&&!room;
+  const wantToday =/วันนี้/.test(t)&&!wantFree&&!room&&!wantWho;
+
+  if(wantBook) return{text:'ไปที่ฟอร์มจองได้เลยค่ะ กรอกห้อง/เวลา ระบบจะเช็คไม่ให้ชนกันให้อัตโนมัติ',action:'form'};
+
+  if(wantEq&&room){
+    const eqList=room.eq.length?room.eq.map(e=>eqLabel(e)).join(', '):'ไม่มีข้อมูลอุปกรณ์';
+    return{text:`${room.name} มีอุปกรณ์: ${eqList} · ที่นั่ง ${room.cap} คนค่ะ`};
   }
-  if(wantWho&&room){const list=bookings.filter(b=>b.room===room.id&&b.date===TODAY&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));return{text:list.length?`ตารางของ ${room.name} วันนี้ค่ะ`:`${room.name} วันนี้ยังว่างทั้งวันค่ะ`,bookings:list};}
-  if(wantSum){const td=bookings.filter(b=>b.date===TODAY&&ACTIVE.includes(b.status));const inuse=td.filter(b=>b.status==='in-use').length;return{text:`วันนี้มีการจอง ${td.length} รายการ · กำลังใช้งาน ${inuse} ห้อง · ห้องที่มีคิวเยอะสุดคือ MUD 1 ค่ะ`};}
+  if(wantEq&&!room){
+    const lines=ROOMS.map(r=>`• ${r.name}: ${r.eq.length?r.eq.map(e=>eqLabel(e)).join(', '):'–'}`).join('\n');
+    return{text:`อุปกรณ์แต่ละห้องค่ะ:\n${lines}`};
+  }
+
+  if(wantFree){
+    if(room){
+      const gaps=freeGaps(room.id,TODAY,bookings);
+      return gaps.length
+        ?{text:`ช่วงที่ว่างของ ${room.name} วันนี้ค่ะ — กดเพื่อจองได้เลย`,gaps:gaps.map(g=>({...g,roomId:room.id}))}
+        :{text:`${room.name} วันนี้เต็มทั้งวันแล้วค่ะ`};
+    }
+    const list=ROOMS.map(r=>({r,gaps:freeGaps(r.id,TODAY,bookings)})).filter(x=>x.gaps.length);
+    return list.length
+      ?{text:'ห้องที่ยังมีช่วงว่างวันนี้ค่ะ (กดช่วงเวลาเพื่อจอง)',roomGaps:list}
+      :{text:'วันนี้ทุกห้องเต็มหมดแล้วค่ะ ลองวันพรุ่งนี้ดูนะคะ'};
+  }
+
+  if(wantWho&&room){
+    const list=bookings.filter(b=>b.room===room.id&&b.date===TODAY&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
+    return{text:list.length?`ตารางของ ${room.name} วันนี้ค่ะ`:`${room.name} วันนี้ยังว่างทั้งวันค่ะ`,bookings:list};
+  }
+  if(wantWho&&!room){
+    const td=bookings.filter(b=>b.date===TODAY&&ACTIVE.includes(b.status));
+    return{text:td.length?`วันนี้มีการจองรวม ${td.length} รายการค่ะ`:'วันนี้ยังไม่มีการจองค่ะ',bookings:td.sort((a,b)=>t2m(a.s)-t2m(b.s))};
+  }
+
+  if(wantSum||wantToday){
+    const td=bookings.filter(b=>b.date===TODAY&&ACTIVE.includes(b.status));
+    const inuse=td.filter(b=>b.status==='in-use').length;
+    const freeCount=ROOMS.length-inuse;
+    return{text:`วันนี้มีการจอง ${td.length} รายการ · กำลังใช้งาน ${inuse} ห้อง · ว่าง ${freeCount} ห้องค่ะ`};
+  }
+
   return null;
 }
 /* ====== LLM PROVIDERS (ใส่ key เองเพื่อทดลอง) ====== */
@@ -721,7 +772,7 @@ function ChatBot({bookings,toast,openForm,go,aiConfig}){
       return;
     }
     setBusy(true);
-    const roomList=ROOMS.map(r=>({ห้อง:r.name,จุ:r.cap+' คน',อุปกรณ์:(r.eq||[]).map(x=>EQ_LABEL[x]||x).join(', ')||'-'}));
+    const roomList=ROOMS.map(r=>({ห้อง:r.name,จุ:r.cap+' คน',อุปกรณ์:(r.eq||[]).map(x=>eqLabel(x)).join(', ')||'-'}));
     const ctx=bookings.filter(b=>ACTIVE.includes(b.status)).map(b=>({ห้อง:ROOM(b.room).name,วันที่:b.date,เวลา:b.s+'-'+b.e,หัวข้อ:b.title,ผู้จอง:b.by}));
     const freeToday=ROOMS.map(r=>({ห้อง:r.name,ช่องว่างวันนี้:freeGaps(r.id,TODAY,bookings).map(g=>g.s+'-'+g.e).join(', ')||'ว่างทั้งวัน'}));
     try{
@@ -1016,7 +1067,7 @@ function RoomsPage({bookings,go,openForm}){
       <RoomGfx room={r} badge={<span className={"badge "+(free?'b-green':'b-red')} style={{boxShadow:'var(--shadow-sm)'}}><span className="d"></span>{free?'ว่าง':'ไม่ว่าง'}</span>}/>
       <h4>{r.name}</h4>
       <div className="meta-row"><Icon name="users" size={14}/><span>{r.cap} ที่นั่ง</span><span style={{color:'var(--text-faint)'}}>·</span><span>ชั้น {idx%3+1}</span></div>
-      <div className="eq-row">{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{EQ_LABEL[e]}</span>)}</div>
+      <div className="eq-row">{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{eqLabel(e)}</span>)}</div>
       <div className="row-between"><button className="btn btn-ghost btn-sm" onClick={()=>go('calendar')}>ดูตาราง</button><button className="btn btn-primary btn-sm" onClick={()=>openForm({roomId:r.id})}>จองห้องนี้</button></div>
     </div>);
   })}</div>);
@@ -1194,7 +1245,7 @@ function BookingDetail({b,close,cancel,checkIn,user,onEdit}){
         <div className="detail-line"><Icon name="note" size={17}/><span className="dl-label">หัวข้อ</span><b style={{fontWeight:500}}>{b.title}</b></div>
         <div className="detail-line"><Icon name="user" size={17}/><span className="dl-label">ผู้จอง</span><b style={{fontWeight:500}}>{b.by}</b></div>
         {b.link&&<div className="detail-line"><Icon name="link" size={17}/><span className="dl-label">ลิงก์</span><a href={b.link} target="_blank" style={{color:'var(--primary)',fontWeight:500,wordBreak:'break-all'}}>{b.link}</a></div>}
-        <div className="detail-line"><Icon name="tv" size={17}/><span className="dl-label">อุปกรณ์ห้อง</span><div style={{display:'flex',flexWrap:'wrap',gap:5}}>{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{EQ_LABEL[e]}</span>)}</div></div>
+        <div className="detail-line"><Icon name="tv" size={17}/><span className="dl-label">อุปกรณ์ห้อง</span><div style={{display:'flex',flexWrap:'wrap',gap:5}}>{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{eqLabel(e)}</span>)}</div></div>
         {b.extras&&b.extras.length>0&&<div className="detail-line"><Icon name="extension" size={17}/><span className="dl-label">ขอ IT เพิ่ม</span><div style={{display:'flex',flexWrap:'wrap',gap:5}}>{b.extras.map(id=>{const ex=EXTRAS_LIST.find(x=>x.id===id);return ex?<span key={id} className="eq-extra"><Icon name={ex.icon} size={11}/>{ex.label}</span>:null;})}</div></div>}
 
         {canCheck&&canManage&&<button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>{checkIn(b.id);close();}}><Icon name="checkcircle" size={17}/>เช็คอินเข้าห้องประชุม</button>}
@@ -1369,67 +1420,85 @@ const ROOM_COLORS=[
   ['#334155','#0F172A'],['#F59E0B','#D97706'],['#EC4899','#BE185D'],
   ['#10B981','#059669'],['#EF4444','#DC2626'],['#F97316','#EA580C'],
 ];
-const EQ_OPTIONS=[
-  {id:'tv',      label:'TV'},
-  {id:'projector',label:'Projector'},
-  {id:'video',   label:'Video Conf'},
-  {id:'board',   label:'Whiteboard'},
-];
 
 function RoomFormModal({room,onSave,onClose,saving}){
   const isEdit=!!room.id;
   const [name,setName]=useState(room.name||'');
   const [cap,setCap]=useState(room.cap||10);
   const [eq,setEq]=useState(room.eq||[]);
+  const [customEq,setCustomEq]=useState(''); // free-text เพิ่มอุปกรณ์เอง
   const [gIdx,setGIdx]=useState(()=>{
     const i=ROOM_COLORS.findIndex(c=>c[0]===(room.g&&room.g[0]));
     return i>=0?i:0;
   });
-  const toggleEq=id=>setEq(e=>e.includes(id)?e.filter(x=>x!==id):[...id,...e].filter((v,i,a)=>a.indexOf(v)===i)); // preserve order
+  const togglePreset=id=>setEq(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
+  const addCustom=()=>{
+    const val=customEq.trim();
+    if(!val||eq.includes(val))return;
+    setEq(prev=>[...prev,val]);
+    setCustomEq('');
+  };
+  const removeEq=id=>setEq(prev=>prev.filter(x=>x!==id));
   const handleSave=()=>{
-    if(!name.trim()){return;}
-    onSave({
-      id:room.id||undefined,
-      name:name.trim(),
-      capacity:Number(cap)||0,
-      equipment:EQ_OPTIONS.filter(o=>eq.includes(o.id)).map(o=>o.id),
-      colorFrom:ROOM_COLORS[gIdx][0],
-      colorTo:ROOM_COLORS[gIdx][1],
-    });
+    if(!name.trim())return;
+    onSave({id:room.id||undefined,name:name.trim(),capacity:Number(cap)||0,equipment:eq,colorFrom:ROOM_COLORS[gIdx][0],colorTo:ROOM_COLORS[gIdx][1]});
   };
   return(
     <div className="overlay" onClick={onClose}>
-      <div className="modal" style={{maxWidth:480}} onClick={e=>e.stopPropagation()}>
+      <div className="modal" style={{maxWidth:500}} onClick={e=>e.stopPropagation()}>
         <div className="modal-head">
           <Icon name={isEdit?'edit':'plus'} size={18}/>
           {isEdit?'แก้ไขห้องประชุม':'เพิ่มห้องประชุมใหม่'}
           <button className="modal-x" style={{position:'static',marginLeft:'auto',background:'var(--surface-2)',color:'var(--text-muted)'}} onClick={onClose}><Icon name="x" size={17}/></button>
         </div>
-        <div style={{padding:'16px 20px 22px'}}>
+        <div style={{padding:'16px 20px 22px',maxHeight:'75vh',overflowY:'auto'}}>
           <div className="room-form-grid">
             {/* Preview */}
-            <div style={{height:80,borderRadius:12,background:`linear-gradient(135deg,${ROOM_COLORS[gIdx][0]},${ROOM_COLORS[gIdx][1]})`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <div style={{height:76,borderRadius:12,background:`linear-gradient(135deg,${ROOM_COLORS[gIdx][0]},${ROOM_COLORS[gIdx][1]})`,display:'flex',alignItems:'center',justifyContent:'center'}}>
               <span style={{color:'#fff',fontWeight:600,fontSize:16,textShadow:'0 1px 4px rgba(0,0,0,.4)'}}>{name||'ชื่อห้อง'}</span>
             </div>
             <div className="field">
               <label>ชื่อห้องประชุม<span className="req">*</span></label>
-              <input className="inp" placeholder="เช่น Board Room, MUD 5" value={name} onChange={e=>setName(e.target.value)}/>
+              <input className="inp" placeholder="เช่น Board Room, PREMA F4" value={name} onChange={e=>setName(e.target.value)}/>
             </div>
             <div className="field">
               <label>จำนวนที่นั่ง (คน)<span className="req">*</span></label>
               <input className="inp" type="number" min="1" max="500" value={cap} onChange={e=>setCap(e.target.value)}/>
             </div>
+            {/* อุปกรณ์ในห้อง — preset + free-text */}
             <div className="field">
-              <label>อุปกรณ์ในห้อง</label>
-              <div className="eq-check-row">
-                {EQ_OPTIONS.map(o=>(
+              <label>อุปกรณ์ในห้อง (ติดถาวร)</label>
+              <div style={{fontSize:11.5,color:'var(--text-muted)',marginBottom:8}}>เลือก preset หรือพิมพ์เพิ่มเองได้อิสระ</div>
+              {/* Preset */}
+              <div className="eq-check-row" style={{marginBottom:10}}>
+                {EQ_PRESETS.map(o=>(
                   <button key={o.id} type="button" className={'eq-check'+(eq.includes(o.id)?' on':'')}
-                    onClick={()=>setEq(prev=>prev.includes(o.id)?prev.filter(x=>x!==o.id):[...prev,o.id])}>
-                    <Icon name={o.id} size={14}/>{o.label}
+                    onClick={()=>togglePreset(o.id)}>
+                    <Icon name={o.icon} size={14}/>{o.label}
                   </button>
                 ))}
               </div>
+              {/* Free-text input */}
+              <div style={{display:'flex',gap:8,marginBottom:8}}>
+                <input className="inp" style={{flex:1}} placeholder="พิมพ์อุปกรณ์เพิ่ม เช่น จอ LED 85 นิ้ว" value={customEq}
+                  onChange={e=>setCustomEq(e.target.value)}
+                  onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addCustom();}}}/>
+                <button className="btn btn-ghost btn-sm" type="button" onClick={addCustom} disabled={!customEq.trim()}><Icon name="plus" size={14}/>เพิ่ม</button>
+              </div>
+              {/* แสดงรายการที่เลือกแล้ว */}
+              {eq.length>0&&(
+                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                  {eq.map(id=>(
+                    <span key={id} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,padding:'3px 8px 3px 10px',borderRadius:20,background:'var(--primary-soft)',border:'1px solid var(--primary)',color:'var(--primary)'}}>
+                      {EQ_PRESETS.find(p=>p.id===id)?<Icon name={EQ_PRESETS.find(p=>p.id===id).icon} size={12}/>:null}
+                      {eqLabel(id)}
+                      <button type="button" style={{display:'flex',padding:0,color:'var(--primary)',opacity:.7}} onClick={()=>removeEq(id)}><Icon name="x" size={12}/></button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
+            {/* สีห้อง */}
             <div className="field">
               <label>สีห้อง</label>
               <div className="color-row">
@@ -1502,7 +1571,7 @@ function RoomsAdmin({user,bookings,toast,reload}){
                 <div className="manage-name">{r.name}</div>
                 <div className="manage-sub">
                   <span><Icon name="users" size={12}/> {r.cap} ที่นั่ง</span>
-                  {r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{EQ_LABEL[e]}</span>)}
+                  {r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{eqLabel(e)}</span>)}
                   {activeCount>0&&<span style={{color:'var(--amber-tx)',fontSize:11}}>📅 {activeCount} การจอง active</span>}
                 </div>
               </div>
