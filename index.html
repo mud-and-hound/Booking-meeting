@@ -370,7 +370,7 @@ const {useState,useEffect,useRef,useMemo}=React;
    - รูปแบบ: https://script.google.com/macros/s/XXXXXXXX/exec
    - คีย์ AI ไม่ฝังในไฟล์แล้ว → ดึงจากชีต _AIKeys (ปลอด GitHub secret scanning)
    ============================================================ */
-const API_URL = "https://script.google.com/macros/s/AKfycbyAvbbjRUHmKJxTip0vf3Z06Nufab7xkyuF9Z7zYV0zgVbXtjUvI-xIGZdqYQJfj0aUtw/exec";
+const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
 /* เก็บ session login ในเบราว์เซอร์ (ห่อ try-catch กัน error เวลาพรีวิว/sandbox) */
 const _mem = {};
@@ -646,7 +646,7 @@ function botAnswer(text,bookings){
 const AI_PROVIDERS={
   gemini:{label:'Google Gemini',model:'gemini-2.5-flash',keyUrl:'https://aistudio.google.com/apikey',hint:'ฟรี ไม่ต้องใช้บัตร'},
   openai:{label:'OpenAI',model:'gpt-4o-mini',keyUrl:'https://platform.openai.com/api-keys',hint:'gpt-4o-mini ราคาถูก'},
-  groq:{label:'Groq',model:'llama-3.1-8b-instant',keyUrl:'https://console.groq.com/keys',hint:'ฟรี เร็วมาก (Llama)'},
+  groq:{label:'Groq',model:'openai/gpt-oss-20b',keyUrl:'https://console.groq.com/keys',hint:'ฟรี เร็วมาก (GPT-OSS)'},
 };
 async function callLLM(cfg,prompt){
   const provider=cfg.provider,key=cfg.key,model=cfg.model||AI_PROVIDERS[provider].model;
@@ -681,9 +681,24 @@ function ChatBot({bookings,toast,openForm,go,aiConfig}){
       return;
     }
     setBusy(true);
+    const roomList=ROOMS.map(r=>({ห้อง:r.name,จุ:r.cap+' คน',อุปกรณ์:(r.eq||[]).map(x=>EQ_LABEL[x]||x).join(', ')||'-'}));
     const ctx=bookings.filter(b=>ACTIVE.includes(b.status)).map(b=>({ห้อง:ROOM(b.room).name,วันที่:b.date,เวลา:b.s+'-'+b.e,หัวข้อ:b.title,ผู้จอง:b.by}));
+    const freeToday=ROOMS.map(r=>({ห้อง:r.name,ช่องว่างวันนี้:freeGaps(r.id,TODAY,bookings).map(g=>g.s+'-'+g.e).join(', ')||'ว่างทั้งวัน'}));
     try{
-      const ans=await callLLM(aiConfig,`คุณเป็นผู้ช่วยจองห้องประชุม ตอบสั้น กระชับ เป็นภาษาไทย วันนี้คือ ${thFull(TODAY)}. ข้อมูลการจองปัจจุบัน (JSON): ${JSON.stringify(ctx)}. คำถาม: ${text}`);
+      const sys=`คุณเป็นผู้ช่วยจองห้องประชุมขององค์กร ตอบสั้น กระชับ สุภาพ เป็นภาษาไทย ลงท้ายด้วย "ค่ะ"
+วันนี้คือ ${thFull(TODAY)} · เวลาทำการ 08:00-20:00
+
+[ห้องประชุมทั้งหมด — ชื่อ / ความจุ / อุปกรณ์]
+${JSON.stringify(roomList)}
+
+[การจองที่ยังใช้งานอยู่]
+${JSON.stringify(ctx)}
+
+[ช่วงเวลาว่างของแต่ละห้องวันนี้]
+${JSON.stringify(freeToday)}
+
+กติกา: ตอบโดยอิงข้อมูล 3 ส่วนด้านบนเท่านั้น — เรื่องความจุ/อุปกรณ์/ช่วงว่าง ให้ดูจากข้อมูลจริง ห้ามเดา ถ้าผู้ใช้ถามว่าห้องไหนรองรับกี่คนหรือมีอุปกรณ์อะไร ให้เทียบจากรายการห้อง ถ้าข้อมูลไม่พอให้บอกตรงๆ ว่าไม่มีข้อมูล แล้วแนะนำให้ดูหน้าปฏิทินหรือหน้าห้องประชุม`;
+      const ans=await callLLM(aiConfig,`${sys}\n\nคำถามผู้ใช้: ${text}`);
       setMsgs(m=>[...m,{t:'bot',text:ans}]);
     }catch(e){
       const msg=e.message==='no-key'?'ยังไม่ได้ใส่ API key ค่ะ':('เชื่อมต่อ AI ไม่สำเร็จ: '+e.message+' — เช็ค key ให้ถูก หรือ provider บางตัวอาจติด CORS ตอนเรียกจากเบราว์เซอร์ตรงๆ');
@@ -1296,7 +1311,7 @@ function App(){
   const [dark,setDark]=useState(false);
   const [page,setPage]=useState('home');
   const [user,setUser]=useState(()=>{try{const s=safeStore.get('mrb_user');return s?shapeUser(JSON.parse(s)):null;}catch(e){return null;}});
-  const [aiConfig,setAiConfig]=useState({provider:'gemini',key:'',model:''});
+  const [aiConfig,setAiConfig]=useState({provider:'groq',key:'',model:''});
   const [bookings,setBookings]=useState([]);
   const [detail,setDetail]=useState(null);
   const [editing,setEditing]=useState(null);
@@ -1322,7 +1337,7 @@ function App(){
       ROOMS=d.rooms||[];
       if(d.today)TODAY=d.today;
       setCursor(c=>c||TODAY);
-      if(d.aiKey&&d.aiKey.key){setAiConfig({provider:d.aiKey.provider||'gemini',key:d.aiKey.key,model:'',name:d.aiKey.name,projectName:d.aiKey.projectName,projectNumber:d.aiKey.projectNumber});}
+      if(d.aiKey&&d.aiKey.key){setAiConfig({provider:d.aiKey.provider||'groq',key:d.aiKey.key,model:'',name:d.aiKey.name,projectName:d.aiKey.projectName,projectNumber:d.aiKey.projectNumber});}
       setBookings(prep(d.bookings||[]));
       setReady(true);
     }catch(e){ setBootError(e.message); }
