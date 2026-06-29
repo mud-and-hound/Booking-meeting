@@ -365,8 +365,22 @@ select.inp{cursor:pointer}
 .success-ring{width:82px;height:82px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;color:var(--green-tx)}
 .success-pop .smsg{font-size:14px;font-weight:600;color:var(--text);background:var(--surface);padding:8px 18px;border-radius:22px;border:1px solid var(--border);box-shadow:var(--shadow)}
 @keyframes successFade{0%{opacity:0;transform:scale(.92)}14%{opacity:1;transform:scale(1)}82%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+/* manage rooms */
+.color-row{display:flex;gap:8px;flex-wrap:wrap}
+.color-swatch{width:28px;height:28px;border-radius:8px;cursor:pointer;border:3px solid transparent;transition:.15s;flex-shrink:0}
+.color-swatch.on{border-color:var(--text);transform:scale(1.12)}
+.eq-check-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px}
+.eq-check{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface-2);font-size:12.5px;cursor:pointer;transition:.15s}
+.eq-check:hover{border-color:var(--primary);color:var(--primary)}
+.eq-check.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.manage-list{display:flex;flex-direction:column;gap:10px}
+.manage-row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:13px 16px;transition:.15s}
+.manage-row:hover{box-shadow:var(--shadow)}
+.manage-color{width:44px;height:44px;border-radius:11px;flex-shrink:0}
+.manage-body{flex:1;min-width:0}
+.manage-name{font-size:14px;font-weight:600}
+.manage-sub{font-size:12px;color:var(--text-muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 </style>
-</head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
@@ -514,14 +528,15 @@ function RoomGfx({room,cls='',badge}){
 
 /* ====== SIDEBAR / NAV ====== */
 const NAV=[
-  {id:'home',label:'หน้าหลัก',icon:'home'},
-  {id:'form',label:'จองห้อง',icon:'plus'},
-  {id:'book',label:'ผู้ช่วย AI',icon:'bot'},
-  {id:'calendar',label:'ปฏิทิน',icon:'calendar'},
-  {id:'mine',label:'การจองของฉัน',icon:'mine'},
-  {id:'rooms',label:'ห้องประชุม',icon:'room'},
-  {id:'reports',label:'รายงาน',icon:'report'},
-  {id:'settings',label:'ตั้งค่า',icon:'settings'},
+  {id:'home',    label:'หน้าหลัก',       icon:'home'},
+  {id:'form',    label:'จองห้อง',         icon:'plus'},
+  {id:'book',    label:'ผู้ช่วย AI',      icon:'bot'},
+  {id:'calendar',label:'ปฏิทิน',          icon:'calendar'},
+  {id:'mine',    label:'การจองของฉัน',    icon:'mine'},
+  {id:'rooms',   label:'ห้องประชุม',      icon:'room'},
+  {id:'manage',  label:'จัดการห้อง',      icon:'settings', adminOnly:true},
+  {id:'reports', label:'รายงาน',          icon:'report'},
+  {id:'settings',label:'ตั้งค่า',          icon:'settings'},
 ];
 function Sidebar({page,go,user,openProfile}){
   return(
@@ -531,7 +546,7 @@ function Sidebar({page,go,user,openProfile}){
         <div><div className="brand-name">MEETING ROOM</div><div className="brand-sub">BOOKING SYSTEM</div></div>
       </div>
       <nav className="nav">
-        {NAV.map(n=><button key={n.id} className={"nav-item"+(page===n.id?" active":"")} onClick={()=>go(n.id)}><Icon name={n.icon} size={18}/><span>{n.label}</span></button>)}
+        {NAV.filter(n=>!n.adminOnly||user.isAdmin).map(n=><button key={n.id} className={"nav-item"+(page===n.id?" active":"")} onClick={()=>go(n.id)}><Icon name={n.icon} size={18}/><span>{n.label}</span></button>)}
       </nav>
       <div className="sb-user" onClick={openProfile}>
         <div className="avatar">{user.nick[0]}</div>
@@ -545,7 +560,7 @@ function MobileNav({page,go}){
   return(<nav className="mobilenav">{items.map(n=><button key={n.id} className={"mn-item"+(page===n.id?" active":"")} onClick={()=>go(n.id)}><Icon name={n.icon} size={21}/><span>{n.label}</span></button>)}</nav>);
 }
 
-const TITLES={home:'',form:'จองห้องประชุม',book:'ผู้ช่วย AI',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
+const TITLES={home:'',form:'จองห้องประชุม',book:'ผู้ช่วย AI',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
 function Topbar({page,dark,setDark,search,setSearch,user}){
   return(
     <header className="topbar">
@@ -1241,6 +1256,8 @@ async function apiWrite(payload){
   console.log('%c[MRB] ✓ '+act,'color:#16a34a', ((Date.now()-t0)/1000).toFixed(2)+'s');
   return r.data;
 }
+const apiSaveRoom=room=>apiWrite({action:'saveRoom',room});
+const apiDeleteRoom=roomId=>apiWrite({action:'deleteRoom',roomId});
 
 
 /* แปลงข้อมูล user จาก sheet → object ที่ UI ใช้ (เติม nick/phone ที่ UI ต้องการ) */
@@ -1344,6 +1361,193 @@ function AuthScreen({onLogin}){
     <div className="auth-switch">{mode==='login'?<>ยังไม่มีบัญชี? <b onClick={()=>{setMode('register');setErr('');}}>สมัครสมาชิก</b></>:<>มีบัญชีแล้ว? <b onClick={()=>{setMode('login');setErr('');}}>เข้าสู่ระบบ</b></>}</div>
     {mode==='login'&&<div className="auth-hint">🔑 ทดลองใช้: <b>u1</b> / <b>1234</b> (แอดมิน) หรือ <b>demo</b> / <b>1234</b></div>}
   </div></div>);
+}
+
+/* ====== ROOMS ADMIN (admin/IT เท่านั้น) ====== */
+const ROOM_COLORS=[
+  ['#3B82F6','#1D4ED8'],['#0EA5A5','#0F766E'],['#8B5CF6','#6D28D9'],
+  ['#334155','#0F172A'],['#F59E0B','#D97706'],['#EC4899','#BE185D'],
+  ['#10B981','#059669'],['#EF4444','#DC2626'],['#F97316','#EA580C'],
+];
+const EQ_OPTIONS=[
+  {id:'tv',      label:'TV'},
+  {id:'projector',label:'Projector'},
+  {id:'video',   label:'Video Conf'},
+  {id:'board',   label:'Whiteboard'},
+];
+
+function RoomFormModal({room,onSave,onClose,saving}){
+  const isEdit=!!room.id;
+  const [name,setName]=useState(room.name||'');
+  const [cap,setCap]=useState(room.cap||10);
+  const [eq,setEq]=useState(room.eq||[]);
+  const [gIdx,setGIdx]=useState(()=>{
+    const i=ROOM_COLORS.findIndex(c=>c[0]===(room.g&&room.g[0]));
+    return i>=0?i:0;
+  });
+  const toggleEq=id=>setEq(e=>e.includes(id)?e.filter(x=>x!==id):[...id,...e].filter((v,i,a)=>a.indexOf(v)===i)); // preserve order
+  const handleSave=()=>{
+    if(!name.trim()){return;}
+    onSave({
+      id:room.id||undefined,
+      name:name.trim(),
+      capacity:Number(cap)||0,
+      equipment:EQ_OPTIONS.filter(o=>eq.includes(o.id)).map(o=>o.id),
+      colorFrom:ROOM_COLORS[gIdx][0],
+      colorTo:ROOM_COLORS[gIdx][1],
+    });
+  };
+  return(
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" style={{maxWidth:480}} onClick={e=>e.stopPropagation()}>
+        <div className="modal-head">
+          <Icon name={isEdit?'edit':'plus'} size={18}/>
+          {isEdit?'แก้ไขห้องประชุม':'เพิ่มห้องประชุมใหม่'}
+          <button className="modal-x" style={{position:'static',marginLeft:'auto',background:'var(--surface-2)',color:'var(--text-muted)'}} onClick={onClose}><Icon name="x" size={17}/></button>
+        </div>
+        <div style={{padding:'16px 20px 22px'}}>
+          <div className="room-form-grid">
+            {/* Preview */}
+            <div style={{height:80,borderRadius:12,background:`linear-gradient(135deg,${ROOM_COLORS[gIdx][0]},${ROOM_COLORS[gIdx][1]})`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <span style={{color:'#fff',fontWeight:600,fontSize:16,textShadow:'0 1px 4px rgba(0,0,0,.4)'}}>{name||'ชื่อห้อง'}</span>
+            </div>
+            <div className="field">
+              <label>ชื่อห้องประชุม<span className="req">*</span></label>
+              <input className="inp" placeholder="เช่น Board Room, MUD 5" value={name} onChange={e=>setName(e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>จำนวนที่นั่ง (คน)<span className="req">*</span></label>
+              <input className="inp" type="number" min="1" max="500" value={cap} onChange={e=>setCap(e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>อุปกรณ์ในห้อง</label>
+              <div className="eq-check-row">
+                {EQ_OPTIONS.map(o=>(
+                  <button key={o.id} type="button" className={'eq-check'+(eq.includes(o.id)?' on':'')}
+                    onClick={()=>setEq(prev=>prev.includes(o.id)?prev.filter(x=>x!==o.id):[...prev,o.id])}>
+                    <Icon name={o.id} size={14}/>{o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>สีห้อง</label>
+              <div className="color-row">
+                {ROOM_COLORS.map((c,i)=>(
+                  <div key={i} className={'color-swatch'+(gIdx===i?' on':'')}
+                    style={{background:`linear-gradient(135deg,${c[0]},${c[1]})`}}
+                    onClick={()=>setGIdx(i)}/>
+                ))}
+              </div>
+            </div>
+            <button className="btn btn-primary btn-block" disabled={!name.trim()||saving} onClick={handleSave}>
+              <Icon name={saving?'clock':'check'} size={16}/>
+              {saving?'กำลังบันทึก...':(isEdit?'บันทึกการแก้ไข':'เพิ่มห้องประชุม')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RoomsAdmin({user,bookings,toast,reload}){
+  const [editRoom,setEditRoom]=useState(null); // null=ปิด, {}=เพิ่มใหม่, {id,...}=แก้ไข
+  const [delConfirm,setDelConfirm]=useState(null);
+  const [saving,setSaving]=useState(false);
+
+  if(!user.isAdmin) return(
+    <div className="card pad" style={{textAlign:'center',padding:'48px 24px'}}>
+      <Icon name="shield" size={48} sw={1.2}/>
+      <div style={{fontSize:17,fontWeight:600,margin:'16px 0 8px'}}>ไม่มีสิทธิ์เข้าถึง</div>
+      <div style={{color:'var(--text-muted)',fontSize:13}}>หน้านี้สำหรับ Admin / IT เท่านั้น</div>
+    </div>
+  );
+
+  const handleSave=async(room)=>{
+    setSaving(true);
+    try{
+      await apiSaveRoom(room);
+      await reload();
+      setEditRoom(null);
+      toast(room.id?'แก้ไขห้องเรียบร้อย':'เพิ่มห้องใหม่เรียบร้อย','ok');
+    }catch(e){ toast(e.message,'err'); }
+    setSaving(false);
+  };
+  const handleDelete=async(roomId)=>{
+    setSaving(true);
+    try{
+      await apiDeleteRoom(roomId);
+      await reload();
+      setDelConfirm(null);
+      toast('ลบห้องเรียบร้อย','ok');
+    }catch(e){ toast(e.message,'err'); }
+    setSaving(false);
+  };
+
+  return(
+    <div style={{maxWidth:680}}>
+      <div className="row-between" style={{marginBottom:16}}>
+        <div style={{fontSize:13,color:'var(--text-muted)'}}>{ROOMS.length} ห้องประชุม</div>
+        <button className="btn btn-primary" onClick={()=>setEditRoom({})}><Icon name="plus" size={16}/>เพิ่มห้องใหม่</button>
+      </div>
+
+      <div className="manage-list">
+        {ROOMS.map(r=>{
+          const activeCount=bookings.filter(b=>b.room===r.id&&['confirmed','in-use','pending'].includes(b.status)).length;
+          return(
+            <div className="manage-row" key={r.id}>
+              <div className="manage-color" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}/>
+              <div className="manage-body">
+                <div className="manage-name">{r.name}</div>
+                <div className="manage-sub">
+                  <span><Icon name="users" size={12}/> {r.cap} ที่นั่ง</span>
+                  {r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{EQ_LABEL[e]}</span>)}
+                  {activeCount>0&&<span style={{color:'var(--amber-tx)',fontSize:11}}>📅 {activeCount} การจอง active</span>}
+                </div>
+              </div>
+              <div style={{display:'flex',gap:7,flexShrink:0}}>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setEditRoom({...r})}><Icon name="edit" size={14}/>แก้ไข</button>
+                <button className="btn btn-sm" style={{background:'var(--red-bg)',color:'var(--red-tx)',border:'1px solid var(--red)'}}
+                  onClick={()=>setDelConfirm(r)} disabled={saving}>
+                  <Icon name="trash" size={14}/>ลบ
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Modal เพิ่ม/แก้ไข */}
+      {editRoom!==null&&(
+        <RoomFormModal room={editRoom} saving={saving} onSave={handleSave} onClose={()=>setEditRoom(null)}/>
+      )}
+
+      {/* Modal ยืนยันลบ */}
+      {delConfirm&&(
+        <div className="overlay" onClick={()=>setDelConfirm(null)}>
+          <div className="modal" style={{maxWidth:380}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-head"><Icon name="warn" size={18} sw={2}/> ยืนยันลบห้อง</div>
+            <div style={{padding:'14px 20px 20px'}}>
+              <div style={{fontSize:13.5,marginBottom:16,lineHeight:1.6}}>
+                ต้องการลบ <b>{delConfirm.name}</b> ออกจากระบบ?<br/>
+                <span style={{color:'var(--text-muted)',fontSize:12}}>การจองเก่าที่ผ่านมาจะยังคงอยู่ในระบบ แต่จะไม่แสดงห้องในปฏิทินอีกต่อไป</span>
+              </div>
+              {bookings.filter(b=>b.room===delConfirm.id&&['confirmed','in-use','pending'].includes(b.status)).length>0&&(
+                <div className="conflict-warn" style={{marginBottom:14}}><Icon name="warn" size={16}/><span>มีการจอง active อยู่ในห้องนี้ — Apps Script จะปฏิเสธการลบ</span></div>
+              )}
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn btn-ghost btn-block" onClick={()=>setDelConfirm(null)}>ยกเลิก</button>
+                <button className="btn btn-danger btn-block" disabled={saving} onClick={()=>handleDelete(delConfirm.id)}>
+                  <Icon name="trash" size={15}/>{saving?'กำลังลบ...':'ลบห้องนี้'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ====== APP ====== */
@@ -1466,6 +1670,7 @@ function App(){
           {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
           {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
+          {page==='manage'&&<RoomsAdmin user={user} bookings={bookings} toast={toast} reload={reload}/>}
           {page==='reports'&&<ReportsPage/>}
           {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} aiConfig={aiConfig} setAiConfig={setAiConfig} logout={logout}/>}
           </>}
