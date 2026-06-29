@@ -122,6 +122,14 @@ input,select,textarea{font-family:inherit}
 .meta-row{display:flex;align-items:center;gap:6px;color:var(--text-muted);font-size:12px;margin:0 2px 9px}
 .eq-row{display:flex;flex-wrap:wrap;gap:5px;margin:0 2px 12px}
 .eq{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);padding:3px 7px;border-radius:7px}
+/* อุปกรณ์เสริม (extras) */
+.extras-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px}
+.extra-btn{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-muted);font-size:12.5px;font-weight:500;cursor:pointer;transition:.15s;text-align:left}
+.extra-btn:hover{border-color:var(--primary);color:var(--primary)}
+.extra-btn.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.extra-btn.on .ex-check{opacity:1}
+.ex-check{width:16px;height:16px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;opacity:0;transition:.15s}
+.eq-extra{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--amber-tx);background:var(--amber-bg);border:1px solid var(--amber);padding:3px 7px;border-radius:7px}
 
 .li{display:flex;align-items:center;gap:13px;padding:13px 4px;border-bottom:1px solid var(--border)}
 .li:last-child{border-bottom:none}
@@ -370,7 +378,7 @@ const {useState,useEffect,useRef,useMemo}=React;
    - รูปแบบ: https://script.google.com/macros/s/XXXXXXXX/exec
    - คีย์ AI ไม่ฝังในไฟล์แล้ว → ดึงจากชีต _AIKeys (ปลอด GitHub secret scanning)
    ============================================================ */
-const API_URL = "https://script.google.com/macros/s/AKfycbyAvbbjRUHmKJxTip0vf3Z06Nufab7xkyuF9Z7zYV0zgVbXtjUvI-xIGZdqYQJfj0aUtw/exec";
+const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
 /* เก็บ session login ในเบราว์เซอร์ (ห่อ try-catch กัน error เวลาพรีวิว/sandbox) */
 const _mem = {};
@@ -423,6 +431,13 @@ function Icon({name,size=18,sw=1.8}){
     save:<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></>,
     warn:<><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></>,
     logout:<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></>,
+    laptop:<><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M0 21h24M8 21l2-4h4l2 4"/></>,
+    hdmi:<><rect x="4" y="7" width="16" height="10" rx="2"/><path d="M8 17v2M16 17v2M7 7V5h10v2"/></>,
+    clicker:<><rect x="8" y="3" width="8" height="14" rx="4"/><path d="M12 17v4M8 21h8M12 7v3"/></>,
+    mic:<><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3M8 22h8"/></>,
+    speaker:<><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="14" r="4"/><path d="M12 6h.01"/></>,
+    webcam:<><circle cx="12" cy="10" r="5"/><path d="M5 20a7 7 0 0 1 14 0M12 15v5"/></>,
+    extension:<><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3"/></>,
   };
   return <svg {...p}>{M[name]||null}</svg>;
 }
@@ -432,6 +447,16 @@ let ROOMS=[];   // โหลดจากชีต _Rooms ตอนเปิด�
 // วันนี้จริง (คำนวณ inline ไม่พึ่ง helper ด้านล่าง) — boot จะอัปเดตจาก server อีกที
 let TODAY=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
 const EQ_LABEL={tv:'TV',projector:'Projector',video:'Video Conf',board:'Whiteboard'};
+// อุปกรณ์เสริมที่ขอยืมจาก IT (ไม่ติดห้อง — ผู้จองเลือกตอนจอง)
+const EXTRAS_LIST=[
+  {id:'laptop',   label:'Laptop',        icon:'laptop'},
+  {id:'hdmi',     label:'HDMI / Adapter',icon:'hdmi'},
+  {id:'clicker',  label:'Clicker',       icon:'clicker'},
+  {id:'mic',      label:'ไมค์เพิ่มเติม', icon:'mic'},
+  {id:'speaker',  label:'ลำโพงพกพา',     icon:'speaker'},
+  {id:'webcam',   label:'Webcam',        icon:'webcam'},
+  {id:'extension',label:'รางปลั๊ก',      icon:'extension'},
+];
 const ROOM=id=>ROOMS.find(r=>r.id===id)||{id:id,name:id,cap:0,eq:[],g:['#64748B','#334155']};
 const DAY_START=8*60, DAY_END=20*60;
 
@@ -746,6 +771,8 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
   const [title,setTitle]=useState('');
   const [att,setAtt]=useState('');
   const [link,setLink]=useState('');
+  const [extras,setExtras]=useState([]);
+  const toggleExtra=id=>setExtras(ex=>ex.includes(id)?ex.filter(x=>x!==id):[...ex,id]);
   useEffect(()=>()=>clearPrefill(),[]);
   const gaps=useMemo(()=>freeGaps(roomId,date,bookings),[roomId,date,bookings]);
   const valid=t2m(e)>t2m(s);
@@ -753,7 +780,7 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
   const submit=(status)=>{
     if(!valid){toast('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม','err');return;}
     if(status!=='draft'&&conflict){toast('ช่วงเวลานี้ชนกับการจองอื่น','err');return;}
-    addBooking({room:roomId,date,s,e,title:title||'การประชุมใหม่',att:Number(att)||ROOM(roomId).cap,owner:user.id,by:user.name,link,status,checkedIn:false}, status==='draft'?'mine':'calendar');
+    addBooking({room:roomId,date,s,e,title:title||'การประชุมใหม่',att:Number(att)||ROOM(roomId).cap,owner:user.id,by:user.name,link,extras,status,checkedIn:false}, status==='draft'?'mine':'calendar');
   };
   return(
     <div className="form-wrap">
@@ -793,6 +820,20 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
           <div className="time-row" style={{gridTemplateColumns:'1fr 1fr'}}>
             <div className="field"><label>จำนวนผู้เข้าร่วม</label><input className="inp" type="number" min="1" placeholder={ROOM(roomId).cap} value={att} onChange={ev=>setAtt(ev.target.value)}/></div>
             <div className="field"><label>ลิงก์ห้องประชุม (Zoom)</label><input className="inp" placeholder="https://zoom.us/j/..." value={link} onChange={ev=>setLink(ev.target.value)}/></div>
+          </div>
+          <div className="field">
+            <label>อุปกรณ์เสริมที่ต้องการขอ IT</label>
+            <div style={{fontSize:11.5,color:'var(--text-muted)',marginBottom:8}}>เลือกเฉพาะอุปกรณ์ที่ไม่มีในห้องและต้องการเพิ่ม</div>
+            <div className="extras-grid">
+              {EXTRAS_LIST.map(ex=>(
+                <button key={ex.id} type="button" className={'extra-btn'+(extras.includes(ex.id)?' on':'')} onClick={()=>toggleExtra(ex.id)}>
+                  <Icon name={ex.icon} size={15}/>
+                  <span style={{flex:1}}>{ex.label}</span>
+                  <span className="ex-check"><Icon name="check" size={10}/></span>
+                </button>
+              ))}
+            </div>
+            {extras.length>0&&<div style={{marginTop:8,fontSize:12,color:'var(--amber-tx)'}}>⚡ ขอ IT: {extras.map(id=>EXTRAS_LIST.find(x=>x.id===id)?.label).join(', ')}</div>}
           </div>
           <div className="form-actions">
             <button className="btn btn-primary" style={{flex:1,minWidth:140}} onClick={()=>submit('confirmed')}><Icon name="check" size={16}/>ยืนยันการจอง</button>
@@ -941,7 +982,7 @@ function MyBookings({bookings,openDetail,checkIn,user}){
           return(<div className="li" key={b.id}>
             <div className="li-time">{b.s} - {b.e}<small>{thShort(b.date)}</small></div>
             <div style={{width:38,height:38,borderRadius:9,background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',flexShrink:0}}><Icon name="room" size={17}/></div>
-            <div className="li-body" onClick={()=>openDetail(b)} style={{cursor:'pointer'}}><div className="li-title">{r.name} · {b.title}</div><div className="li-sub">{b.att} คน{b.link?' · มีลิงก์ Zoom':''}</div></div>
+            <div className="li-body" onClick={()=>openDetail(b)} style={{cursor:'pointer'}}><div className="li-title">{r.name} · {b.title}</div><div className="li-sub">{b.att} คน{b.link?' · มีลิงก์ Zoom':''}{b.extras&&b.extras.length?' · ⚡ ขอ IT '+b.extras.length+' รายการ':''}</div></div>
             {b.checkedIn&&<span className="badge b-green"><Icon name="check" size={12}/>เช็คอินแล้ว</span>}
             {canCheck&&<button className="btn btn-primary btn-sm" onClick={()=>checkIn(b.id)}><Icon name="check" size={13}/>เช็คอิน</button>}
             <span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span>
@@ -1138,7 +1179,8 @@ function BookingDetail({b,close,cancel,checkIn,user,onEdit}){
         <div className="detail-line"><Icon name="note" size={17}/><span className="dl-label">หัวข้อ</span><b style={{fontWeight:500}}>{b.title}</b></div>
         <div className="detail-line"><Icon name="user" size={17}/><span className="dl-label">ผู้จอง</span><b style={{fontWeight:500}}>{b.by}</b></div>
         {b.link&&<div className="detail-line"><Icon name="link" size={17}/><span className="dl-label">ลิงก์</span><a href={b.link} target="_blank" style={{color:'var(--primary)',fontWeight:500,wordBreak:'break-all'}}>{b.link}</a></div>}
-        <div className="detail-line"><Icon name="tv" size={17}/><span className="dl-label">อุปกรณ์</span><b style={{fontWeight:500}}>{r.eq.map(e=>EQ_LABEL[e]).join(', ')}</b></div>
+        <div className="detail-line"><Icon name="tv" size={17}/><span className="dl-label">อุปกรณ์ห้อง</span><div style={{display:'flex',flexWrap:'wrap',gap:5}}>{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{EQ_LABEL[e]}</span>)}</div></div>
+        {b.extras&&b.extras.length>0&&<div className="detail-line"><Icon name="extension" size={17}/><span className="dl-label">ขอ IT เพิ่ม</span><div style={{display:'flex',flexWrap:'wrap',gap:5}}>{b.extras.map(id=>{const ex=EXTRAS_LIST.find(x=>x.id===id);return ex?<span key={id} className="eq-extra"><Icon name={ex.icon} size={11}/>{ex.label}</span>:null;})}</div></div>}
 
         {canCheck&&canManage&&<button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>{checkIn(b.id);close();}}><Icon name="checkcircle" size={17}/>เช็คอินเข้าห้องประชุม</button>}
         {b.checkedIn&&<div className="checkin-bar" style={{marginTop:14,marginBottom:0,background:'var(--green-bg)',borderColor:'var(--green)'}}><Icon name="checkcircle" size={18}/><span style={{fontSize:13,fontWeight:500,color:'var(--green-tx)'}}>เช็คอินเรียบร้อยแล้ว</span></div>}
@@ -1386,7 +1428,7 @@ function App(){
   const addBooking=(b,dest)=>runSave({
     text:'กำลังบันทึกการจอง...', dest:dest,
     ok:b.status==='draft'?'บันทึกร่างแล้ว':'จองห้องสำเร็จ',
-    fn:()=>apiWrite({action:'saveBooking',booking:{room:b.room,date:b.date,start:b.s,end:b.e,title:b.title,att:b.att,owner:b.owner,by:b.by,link:b.link,status:b.status}})
+    fn:()=>apiWrite({action:'saveBooking',booking:{room:b.room,date:b.date,start:b.s,end:b.e,title:b.title,att:b.att,owner:b.owner,by:b.by,link:b.link,extras:b.extras||[],status:b.status}})
   });
   const cancelBooking=id=>runSave({
     text:'กำลังยกเลิกการจอง...', before:()=>setDetail(null), ok:'ยกเลิกการจองแล้ว',
