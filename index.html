@@ -628,7 +628,7 @@ function CheckinBar({b,now,checkIn}){
 /* ====== DASHBOARD ====== */
 function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm}){
   const today=bookings.filter(b=>b.date===TODAY);
-  const counts={book:today.filter(b=>b.status!=='cancelled'&&b.status!=='draft').length,free:ROOMS.length+6-today.filter(b=>b.status==='in-use').length,inuse:today.filter(b=>b.status==='in-use').length,cancel:today.filter(b=>['cancelled','released'].includes(b.status)).length};
+  const counts={book:today.filter(b=>b.status!=='cancelled'&&b.status!=='draft').length,free:ROOMS.length-today.filter(b=>b.status==='in-use').length,inuse:today.filter(b=>b.status==='in-use').length,cancel:today.filter(b=>['cancelled','released'].includes(b.status)).length};
   const myToday=today.filter(b=>b.owner===user.id&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
   const q=search.trim().toLowerCase();
   const availRooms=ROOMS.filter(r=>!q||r.name.toLowerCase().includes(q));
@@ -953,7 +953,7 @@ function ReportsPage(){
   const top=[['MUD 1',45,120],['MUD 2',38,85],['Board Room',32,70],['MUD 3',28,60]];
   return(<div>
     <div className="rep-grid">
-      <div className="kpi"><div className="lbl">ห้องทั้งหมด</div><div className="val">12</div><div className="unit">ห้อง</div></div>
+      <div className="kpi"><div className="lbl">ห้องทั้งหมด</div><div className="val">{ROOMS.length}</div><div className="unit">ห้อง</div></div>
       <div className="kpi"><div className="lbl">การจองทั้งหมด</div><div className="val">156</div><div className="unit">รายการ</div></div>
       <div className="kpi"><div className="lbl">ชั่วโมงการใช้งาน</div><div className="val">320</div><div className="unit">ชั่วโมง</div></div>
       <div className="kpi"><div className="lbl">อัตราการใช้งาน</div><div className="val" style={{color:'var(--green-tx)'}}>75%</div><div className="unit">เฉลี่ย</div></div>
