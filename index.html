@@ -339,6 +339,15 @@ select.inp{cursor:pointer}
 .auth-switch b{color:var(--primary);cursor:pointer;font-weight:600}.auth-switch b:hover{text-decoration:underline}
 .auth-err{background:var(--red-bg);border:1px solid var(--red);color:var(--red-tx);border-radius:10px;padding:10px 13px;font-size:12.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .auth-hint{background:var(--info-bg);border:1px solid var(--info);color:var(--info-tx);border-radius:10px;padding:10px 13px;font-size:12px;margin-top:18px;line-height:1.6}
+.line-login-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;border-radius:10px;font-size:14px;font-weight:600;background:#06C755;color:#fff;box-shadow:0 6px 18px rgba(6,199,85,.32);transition:.16s;margin-top:4px}
+.line-login-btn:hover{background:#04A648}.line-login-btn:active{transform:scale(.97)}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--text-faint);font-size:11.5px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.preview-banner{display:flex;align-items:center;gap:12px;background:var(--info-bg);border-bottom:1px solid var(--info);padding:11px 20px;flex-wrap:wrap}
+.preview-banner .txt{font-size:12.5px;color:var(--info-tx);flex:1;display:flex;align-items:center;gap:7px}
+.qr-box{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px}
+.qr-box img{border-radius:12px;border:1px solid var(--border);padding:14px;background:#fff}
+.qr-box .url-txt{font-size:11.5px;color:var(--text-muted);word-break:break-all;text-align:center;background:var(--surface-2);padding:8px 12px;border-radius:8px;width:100%}
 .auth-row{display:flex;gap:10px}.auth-row .auth-field{flex:1}
 
 /* ===== skeleton loading (shimmer) ===== */
@@ -381,6 +390,7 @@ select.inp{cursor:pointer}
 .manage-name{font-size:14px;font-weight:600}
 .manage-sub{font-size:12px;color:var(--text-muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 </style>
+</head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
@@ -393,6 +403,36 @@ const {useState,useEffect,useRef,useMemo}=React;
    - คีย์ AI ไม่ฝังในไฟล์แล้ว → ดึงจากชีต _AIKeys (ปลอด GitHub secret scanning)
    ============================================================ */
 const API_URL = "https://script.google.com/macros/s/AKfycbyAvbbjRUHmKJxTip0vf3Z06Nufab7xkyuF9Z7zYV0zgVbXtjUvI-xIGZdqYQJfj0aUtw/exec";
+
+/* ============================================================
+   🔑 ตั้งค่า LINE Login
+   - ไปสร้าง "LINE Login Channel" ที่ https://developers.line.biz/console/
+     (คนละส่วนกับ LINE OA แต่ผูก Provider เดียวกันได้ — ดูวิธีทำในคำแนะนำที่ให้ไว้)
+   - เอา Channel ID มาใส่ด้านล่างนี้ (Channel Secret ห้ามใส่ที่นี่ ให้ไปตั้งใน
+     Apps Script > Project Settings > Script Properties แทน — ปลอดภัยกว่า)
+   - ตั้ง Callback URL ในหน้า LINE Developers Console ให้ตรงกับ URL เว็บนี้เป๊ะ
+   ============================================================ */
+const LINE_CHANNEL_ID = "YOUR_LINE_LOGIN_CHANNEL_ID"; // ⬅️ แทนที่ด้วย Channel ID จริงหลังสร้างเสร็จ
+const LINE_REDIRECT_URI = window.location.origin + window.location.pathname;
+function buildLineAuthUrl(){
+  const state = Math.random().toString(36).slice(2);
+  safeStore.set('line_oauth_state', state);
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: LINE_CHANNEL_ID,
+    redirect_uri: LINE_REDIRECT_URI,
+    state,
+    scope: 'profile openid',
+  });
+  return 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
+}
+
+// โดเมนอีเมลบริษัทที่อนุญาต (ต้องตรงกับฝั่ง Apps Script — เช็คซ้ำสองชั้นกันข้าม)
+const ALLOWED_EMAIL_DOMAINS = ['subsrithai.co.th','mudandhound.co.th','greyhound.co.th','goldendonuts.co.th','abpcafe.co.th'];
+function isAllowedEmail(email){
+  const m = String(email||'').toLowerCase().match(/@([a-z0-9.-]+)$/);
+  return !!m && ALLOWED_EMAIL_DOMAINS.includes(m[1]);
+}
 
 /* เก็บ session login ในเบราว์เซอร์ (ห่อ try-catch กัน error เวลาพรีวิว/sandbox) */
 const _mem = {};
@@ -452,6 +492,9 @@ function Icon({name,size=18,sw=1.8}){
     speaker:<><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="14" r="4"/><path d="M12 6h.01"/></>,
     webcam:<><circle cx="12" cy="10" r="5"/><path d="M5 20a7 7 0 0 1 14 0M12 15v5"/></>,
     extension:<><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3"/></>,
+    line:<><path d="M4 8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4H9l-4 3v-3a4 4 0 0 1-1-1z"/></>,
+    qrcode:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM14 20h3M20 14v3M20 20v.01M17 17h.01"/></>,
+    eye:<><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></>,
   };
   return <svg {...p}>{M[name]||null}</svg>;
 }
@@ -1118,6 +1161,8 @@ async function apiWrite(payload){
 }
 const apiSaveRoom=room=>apiWrite({action:'saveRoom',room});
 const apiDeleteRoom=roomId=>apiWrite({action:'deleteRoom',roomId});
+const apiLineLogin=code=>apiWrite({action:'lineLogin',code,redirectUri:LINE_REDIRECT_URI});
+const apiRegisterWithLine=reg=>apiWrite({action:'registerWithLine',reg});
 
 
 /* แปลงข้อมูล user จาก sheet → object ที่ UI ใช้ (เติม nick/phone ที่ UI ต้องการ) */
@@ -1125,7 +1170,7 @@ function shapeUser(u){
   return {
     id:u.id, name:u.name,
     nick:(u.name||'?').trim().split(/\s+/)[0]||'?',
-    dept:u.dept||'', phone:'',
+    dept:u.dept||'', phone:'', email:u.email||'',
     role:u.role||'member',
     isAdmin:!!u.isAdmin || u.role==='admin'
   };
@@ -1184,14 +1229,19 @@ function SuccessCheck({msg}){
 }
 
 /* ====== LOGIN / REGISTER ====== */
-function AuthScreen({onLogin}){
-  const [mode,setMode]=useState('login');
+function AuthScreen({onLogin, pendingLine, busyLine}){
+  const [mode,setMode]=useState(pendingLine?'lineRegister':'login');
   const [userId,setUserId]=useState('');
   const [pwd,setPwd]=useState('');
-  const [name,setName]=useState('');
+  const [name,setName]=useState(pendingLine?.displayName||'');
   const [dept,setDept]=useState('');
+  const [email,setEmail]=useState('');
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState('');
+
+  useEffect(()=>{
+    if(pendingLine){ setMode('lineRegister'); setName(pendingLine.displayName||''); }
+  },[pendingLine]);
 
   const doLogin=async()=>{
     if(!userId||!pwd){setErr('กรอก User ID และรหัสผ่าน');return;}
@@ -1205,14 +1255,55 @@ function AuthScreen({onLogin}){
     try{ const u=await apiRegister({userId:userId.trim(),password:pwd,displayName:name.trim(),dept:dept.trim(),role:'member'}); onLogin(u); }
     catch(e){ setErr(e.message); setBusy(false); }
   };
-  const submit=mode==='login'?doLogin:doRegister;
+  const doLineRegister=async()=>{
+    if(!name.trim()){setErr('กรอกชื่อที่แสดง');return;}
+    if(!isAllowedEmail(email)){setErr('อีเมลต้องเป็นโดเมนบริษัทเท่านั้น เช่น name@mudandhound.co.th');return;}
+    setBusy(true);setErr('');
+    try{
+      const u=await apiRegisterWithLine({lineUserId:pendingLine.userId, displayName:name.trim(), dept:dept.trim(), email:email.trim()});
+      onLogin(u);
+    }catch(e){ setErr(e.message); setBusy(false); }
+  };
+  const startLineLogin=()=>{ window.location.href = buildLineAuthUrl(); };
+
+  const submit = mode==='login'?doLogin : mode==='register'?doRegister : doLineRegister;
   const onEnter=e=>{ if(e.key==='Enter')submit(); };
+
+  if(busyLine){
+    return(<div className="auth-wrap"><div className="auth-card" style={{textAlign:'center',padding:'50px 28px'}}>
+      <div className="spinner" style={{margin:'0 auto 18px'}}></div>
+      <div style={{fontSize:13.5,color:'var(--text-muted)'}}>กำลังเชื่อมต่อกับ LINE...</div>
+    </div></div>);
+  }
+
+  if(mode==='lineRegister'){
+    return(<div className="auth-wrap"><div className="auth-card">
+      <div className="auth-logo" style={{background:'linear-gradient(135deg,#06C755,#04A648)'}}><Icon name="line" size={24}/></div>
+      <div className="auth-title">ยืนยันตัวตนพนักงาน</div>
+      <div className="auth-sub">เชื่อมต่อ LINE สำเร็จ — กรอกข้อมูลให้ครบเพื่อสมัครสมาชิกครั้งแรก</div>
+      {err&&<div className="auth-err"><Icon name="warn" size={15}/><span>{err}</span></div>}
+      <div className="auth-field"><label>ชื่อที่แสดง<span className="req">*</span></label><input className="auth-input" placeholder="เช่น เต้ วราการ" value={name} onChange={e=>setName(e.target.value)} onKeyDown={onEnter}/></div>
+      <div className="auth-field"><label>แผนก</label><input className="auth-input" placeholder="เช่น IT Department (ไม่บังคับ)" value={dept} onChange={e=>setDept(e.target.value)} onKeyDown={onEnter}/></div>
+      <div className="auth-field">
+        <label>อีเมลบริษัท<span className="req">*</span></label>
+        <input className="auth-input" placeholder="name@mudandhound.co.th" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={onEnter} autoComplete="email"/>
+        <div style={{fontSize:11,color:'var(--text-faint)',marginTop:6,lineHeight:1.6}}>ต้องเป็นอีเมลบริษัทในเครือเท่านั้น: @subsrithai.co.th, @mudandhound.co.th, @greyhound.co.th, @goldendonuts.co.th, @abpcafe.co.th</div>
+      </div>
+      <button className="auth-btn" disabled={busy} onClick={submit}>{busy?'กำลังบันทึก...':'ยืนยันและเข้าสู่ระบบ'}</button>
+    </div></div>);
+  }
 
   return(<div className="auth-wrap"><div className="auth-card">
     <div className="auth-logo"><Icon name="calendar" size={26}/></div>
     <div className="auth-title">{mode==='login'?'เข้าสู่ระบบ':'สมัครสมาชิก'}</div>
     <div className="auth-sub">ระบบจองห้องประชุม · Meeting Room Booking</div>
     {err&&<div className="auth-err"><Icon name="warn" size={15}/><span>{err}</span></div>}
+
+    {mode==='login'&&<>
+      <button className="line-login-btn" onClick={startLineLogin}><Icon name="line" size={18}/>เข้าสู่ระบบด้วย LINE</button>
+      <div className="auth-divider"><span>หรือใช้ User ID</span></div>
+    </>}
+
     {mode==='register'&&<div className="auth-field"><label>ชื่อที่แสดง<span className="req">*</span></label><input className="auth-input" placeholder="เช่น เต้ วราการ" value={name} onChange={e=>setName(e.target.value)} onKeyDown={onEnter}/></div>}
     <div className="auth-field"><label>User ID<span className="req">*</span></label><input className="auth-input" placeholder="ชื่อผู้ใช้สำหรับล็อกอิน" value={userId} onChange={e=>setUserId(e.target.value)} onKeyDown={onEnter} autoComplete="username"/></div>
     <div className="auth-field"><label>รหัสผ่าน<span className="req">*</span></label><input className="auth-input" type="password" placeholder="••••••" value={pwd} onChange={e=>setPwd(e.target.value)} onKeyDown={onEnter} autoComplete={mode==='login'?'current-password':'new-password'}/></div>
@@ -1429,6 +1520,58 @@ function RoomsAdmin({user,bookings,toast,reload}){
 }
 
 /* ====== APP ====== */
+/* ====== QR MODAL (แชร์ลิงก์ดูตารางห้อง) ====== */
+function QRModal({url,close}){
+  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(url);
+  return(<div className="overlay" onClick={close}>
+    <div className="modal" style={{maxWidth:340}} onClick={e=>e.stopPropagation()}>
+      <div className="modal-head"><Icon name="qrcode" size={18}/>สแกนดูตารางห้องประชุม<button className="modal-x" style={{position:'static',marginLeft:'auto',background:'var(--surface-2)',color:'var(--text-muted)'}} onClick={close}><Icon name="x" size={17}/></button></div>
+      <div style={{padding:'16px 20px 22px'}}>
+        <div className="qr-box">
+          <img src={qrSrc} width={200} height={200} alt="QR Code"/>
+          <div className="url-txt">{url}</div>
+          <div style={{fontSize:12,color:'var(--text-muted)',textAlign:'center',lineHeight:1.6}}>ให้เพื่อนร่วมงานสแกนเพื่อดูตารางห้องประชุมของสัปดาห์นี้ได้ทันที ไม่ต้องล็อกอิน</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ====== PUBLIC PREVIEW (ดูตารางห้องได้โดยไม่ต้องล็อกอิน — จองต้องล็อกอินเท่านั้น) ====== */
+function PublicPreview({bookings,onWantAuth}){
+  const [showQR,setShowQR]=useState(false);
+  const wk = startOfWeek(TODAY);
+  const days = [...Array(7)].map((_,i)=>addDays(wk,i));
+  const url = window.location.origin + window.location.pathname;
+  return(<div style={{minHeight:'100vh',background:'var(--bg)'}}>
+    <header className="topbar">
+      <div className="brand-logo" style={{width:34,height:34}}><Icon name="calendar" size={17}/></div>
+      <h1 style={{fontSize:15}}>ตารางห้องประชุม <span style={{fontWeight:400,color:'var(--text-muted)',fontSize:12.5}}>(ดูอย่างเดียว)</span></h1>
+      <div className="topbar-actions">
+        <button className="btn btn-ghost btn-sm" onClick={()=>setShowQR(true)}><Icon name="qrcode" size={15}/>แชร์ QR</button>
+        <button className="btn btn-primary btn-sm" onClick={onWantAuth}><Icon name="user" size={15}/>เข้าสู่ระบบเพื่อจอง</button>
+      </div>
+    </header>
+    <div style={{padding:'22px 26px 60px',maxWidth:1100,margin:'0 auto'}}>
+      <div className="card pad">
+        <div className="section-title" style={{margin:'0 0 4px'}}>สัปดาห์นี้ · {thShort(wk)} – {thShort(addDays(wk,6))}</div>
+        <p style={{fontSize:12.5,color:'var(--text-muted)',margin:'0 0 16px'}}>ต้องการจองห้องประชุม? <b style={{color:'var(--primary)',cursor:'pointer'}} onClick={onWantAuth}>เข้าสู่ระบบที่นี่</b></p>
+        <div className="week-grid">
+          {days.map(d=>{
+            const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
+            const dt=parseISO(d);
+            return(<div key={d} className={"wcol"+(d===TODAY?' today':'')}>
+              <div className="wc-head">{TH_DOW[dt.getDay()]}<b>{dt.getDate()}</b></div>
+              {list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar,cursor:'default'}}><b>{ROOM(b.room).name}</b><small>{b.s}-{b.e} · {b.title}</small></div>):<div className="wc-empty">ว่าง</div>}
+            </div>);
+          })}
+        </div>
+      </div>
+    </div>
+    {showQR&&<QRModal url={url} close={()=>setShowQR(false)}/>}
+  </div>);
+}
+
 function App(){
   const [ready,setReady]=useState(false);
   const [bootError,setBootError]=useState('');
@@ -1448,6 +1591,9 @@ function App(){
   const [refreshing,setRefreshing]=useState(false); // skeleton ตอน reload หลังบันทึก
   const [saving,setSaving]=useState(null);           // overlay ระหว่างบันทึก {text}
   const [successMsg,setSuccessMsg]=useState(null);   // ติ๊กถูกเขียวกลางจอ
+  const [wantAuth,setWantAuth]=useState(false);       // ผู้ใช้กด "เข้าสู่ระบบ" จากหน้า preview สาธารณะ
+  const [pendingLine,setPendingLine]=useState(null);  // โปรไฟล์ LINE ที่ยังไม่เคยผูกบัญชี (needsRegister)
+  const [busyLine,setBusyLine]=useState(false);       // กำลังแลก code กับ LINE อยู่
 
   const toast=(msg,type='ok')=>setToastMsg({msg,type});
 
@@ -1483,8 +1629,32 @@ function App(){
   useEffect(()=>{if(successMsg){const t=setTimeout(()=>setSuccessMsg(null),1500);return()=>clearTimeout(t);}},[successMsg]);
 
   // ── auth ──
-  const onLogin=u=>{const su=shapeUser(u);setUser(su);safeStore.set('mrb_user',JSON.stringify(su));toast('ยินดีต้อนรับ '+su.nick,'ok');};
-  const logout=()=>{safeStore.del('mrb_user');setUser(null);setPage('home');};
+  const onLogin=u=>{const su=shapeUser(u);setUser(su);safeStore.set('mrb_user',JSON.stringify(su));setPendingLine(null);setWantAuth(false);toast('ยินดีต้อนรับ '+su.nick,'ok');};
+  const logout=()=>{safeStore.del('mrb_user');setUser(null);setPage('home');setWantAuth(false);};
+
+  // ── LINE Login callback: ตรวจ ?code= ใน URL ตอนกลับมาจากหน้ายืนยันตัวตน LINE ──
+  useEffect(()=>{
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    if(!code) return;
+    window.history.replaceState({}, '', window.location.pathname); // ลบ ?code= ออกจาก URL กันเรียกซ้ำตอนรีเฟรช
+    const savedState = safeStore.get('line_oauth_state');
+    if(state && savedState && state!==savedState){
+      toast('การยืนยันตัวตนจาก LINE ไม่ถูกต้อง กรุณาลองใหม่','err');
+      setWantAuth(true);
+      return;
+    }
+    setBusyLine(true); setWantAuth(true);
+    apiLineLogin(code).then(res=>{
+      setBusyLine(false);
+      if(res.needsRegister) setPendingLine(res.line);
+      else if(res.user) onLogin(res.user);
+    }).catch(e=>{
+      setBusyLine(false);
+      toast('เข้าสู่ระบบด้วย LINE ไม่สำเร็จ: '+e.message,'err');
+    });
+  },[]);
 
   // ── flow บันทึกกลาง: overlay (กำลังบันทึก) → skeleton (reload) → ติ๊กถูกเขียว ──
   const runSave=async({text,fn,ok,before,dest})=>{
@@ -1531,7 +1701,10 @@ function App(){
   // ── render gate ──
   if(bootError)return <BootScreen error={bootError} onRetry={loadData}/>;
   if(!ready)return <SkeletonScreen/>;
-  if(!user)return <AuthScreen onLogin={onLogin}/>;
+  if(!user){
+    if(wantAuth||busyLine||pendingLine) return <AuthScreen onLogin={onLogin} pendingLine={pendingLine} busyLine={busyLine}/>;
+    return <PublicPreview bookings={bookings} onWantAuth={()=>setWantAuth(true)}/>;
+  }
 
   const ti={ok:'checkcircle',warn:'warn',err:'x'}[toastMsg?.type||'ok'];
 
