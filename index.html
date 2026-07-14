@@ -1162,7 +1162,7 @@ async function apiWrite(payload){
 const apiSaveRoom=room=>apiWrite({action:'saveRoom',room});
 const apiDeleteRoom=roomId=>apiWrite({action:'deleteRoom',roomId});
 const apiLineLogin=code=>apiWrite({action:'lineLogin',code,redirectUri:LINE_REDIRECT_URI});
-const apiRegisterWithLine=reg=>apiWrite({action:'registerWithLine',reg});
+const apiRegisterWithLine=reg=>apiWrite({action:'registerWithLine',reg}).then(d=>d.user);
 
 
 /* แปลงข้อมูล user จาก sheet → object ที่ UI ใช้ (เติม nick/phone ที่ UI ต้องการ) */
