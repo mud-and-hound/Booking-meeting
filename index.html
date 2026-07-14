@@ -153,6 +153,14 @@ input,select,textarea{font-family:inherit}
 .li-body{flex:1;min-width:0}.li-title{font-size:13.5px;font-weight:500}.li-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px}
 
 .announce{background:var(--info-bg);border:1px solid var(--border);border-radius:11px;padding:14px}
+.scroll-text-outer{overflow:hidden;position:relative}
+.scroll-text-outer p,.scroll-text-inner{font-size:12px;color:var(--text-muted);line-height:1.6}
+.scroll-text-inner.bounce{animation-name:bounce-scroll;animation-timing-function:ease-in-out;animation-iteration-count:infinite}
+@keyframes bounce-scroll{
+  0%,8%{transform:translateY(0)}
+  46%,54%{transform:translateY(var(--scroll-dist))}
+  92%,100%{transform:translateY(0)}
+}
 .announce h5{font-size:13px;font-weight:600;margin-bottom:6px}.announce p{font-size:12px;color:var(--text-muted);line-height:1.6}
 
 /* chat */
@@ -299,6 +307,7 @@ select.inp{cursor:pointer}
 .modal{background:var(--surface);border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:pop .22s}
 @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 .modal-gfx{height:155px;position:relative;display:flex;align-items:center;justify-content:center}
+.announce-popup-hero{height:100px;position:relative;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#3B82F6,#1E40AF);border-radius:18px 18px 0 0}
 .modal-x{position:absolute;top:13px;right:13px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;z-index:3}
 .modal-x:hover{background:rgba(255,255,255,.32)}
 .detail-line{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
@@ -734,6 +743,28 @@ function CheckinBar({b,now,checkIn}){
 }
 
 /* ====== DASHBOARD ====== */
+/* ====== ข้อความเลื่อนขึ้น-ลงอัตโนมัติ (ใช้กับพื้นที่จำกัด เช่น การ์ดประกาศหน้าแรก) ====== */
+function ScrollingText({text,maxHeight=52}){
+  const outerRef=useRef(null);
+  const innerRef=useRef(null);
+  const [overflow,setOverflow]=useState(0);
+  useEffect(()=>{
+    if(outerRef.current&&innerRef.current){
+      const diff=innerRef.current.scrollHeight-outerRef.current.clientHeight;
+      setOverflow(diff>4?diff:0);
+    }
+  },[text]);
+  const duration=Math.max(6,Math.min(16,overflow/10+6)); // ยาวขึ้นตามความยาวที่ล้น
+  return(
+    <div ref={outerRef} className="scroll-text-outer" style={{maxHeight}}>
+      <div ref={innerRef} className={overflow>0?'scroll-text-inner bounce':'scroll-text-inner'}
+        style={overflow>0?{'--scroll-dist':`-${overflow}px`,animationDuration:`${duration}s`}:{}}>
+        {text}
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,announcements}){
   const today=bookings.filter(b=>b.date===TODAY);
   const myToday=today.filter(b=>b.owner===user.id&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
@@ -763,7 +794,7 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,anno
           {announcements&&announcements.length?announcements.slice(0,2).map(a=>(
             <div className="announce" key={a.id} style={{marginBottom:announcements.length>1?10:0}}>
               <h5>{a.pinned&&'📌 '}{a.title}</h5>
-              <p>{a.body}</p>
+              <ScrollingText text={a.body}/>
             </div>
           )):<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
         </div>
@@ -1725,14 +1756,17 @@ function RoomsAdmin({user,bookings,toast,reload}){
 }
 
 /* ====== จัดการประกาศ (Admin เท่านั้น) ====== */
-function AnnouncementFormModal({item,onSave,onClose,saving}){
+function AnnouncementFormModal({item,announcements,onSave,onClose,saving}){
   const isEdit=!!item.id;
   const [title,setTitle]=useState(item.title||'');
   const [body,setBody]=useState(item.body||'');
   const [pinned,setPinned]=useState(item.pinned||false);
+  const [featured,setFeatured]=useState(item.featured||false);
+  const featuredCount=(announcements||[]).filter(a=>a.featured&&a.id!==item.id).length;
+  const featuredFull=featuredCount>=4 && !featured;
   const handleSave=()=>{
     if(!title.trim()||!body.trim())return;
-    onSave({id:item.id||undefined,title:title.trim(),body:body.trim(),pinned});
+    onSave({id:item.id||undefined,title:title.trim(),body:body.trim(),pinned,featured});
   };
   return(
     <div className="overlay" onClick={onClose}>
@@ -1754,8 +1788,13 @@ function AnnouncementFormModal({item,onSave,onClose,saving}){
             </div>
             <div className="set-row" style={{padding:'8px 4px'}}>
               <div className="set-ic"><Icon name="megaphone" size={16}/></div>
-              <div className="set-body"><div className="t">ปักหมุดไว้บนสุด</div><div className="d">แสดงก่อนประกาศอื่นเสมอ</div></div>
+              <div className="set-body"><div className="t">ปักหมุดไว้บนสุด</div><div className="d">แสดงก่อนประกาศอื่นเสมอในหน้าหลัก</div></div>
               <div className={"switch"+(pinned?' on':'')} onClick={()=>setPinned(p=>!p)}></div>
+            </div>
+            <div className="set-row" style={{padding:'8px 4px'}}>
+              <div className="set-ic"><Icon name="sparkle" size={16}/></div>
+              <div className="set-body"><div className="t">ประกาศเด่น (ขึ้น Popup ตอน login)</div><div className="d">แสดงสูงสุด 4 อัน · ตอนนี้มี {featuredCount} อัน{featuredFull?' (ครบแล้ว ปิดอันอื่นก่อน)':''}</div></div>
+              <div className={"switch"+(featured?' on':'')} onClick={()=>{if(!featuredFull)setFeatured(f=>!f);}} style={featuredFull?{opacity:.4,cursor:'not-allowed'}:{}}></div>
             </div>
             <button className="btn btn-primary btn-block" disabled={!title.trim()||!body.trim()||saving} onClick={handleSave}>
               <Icon name={saving?'clock':'check'} size={16}/>
@@ -1817,7 +1856,7 @@ function AnnouncementsAdmin({user,announcements,toast,reload}){
               <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff'}}><Icon name="megaphone" size={18}/></div>
             </div>
             <div className="manage-body">
-              <div className="manage-name">{a.pinned&&'📌 '}{a.title}</div>
+              <div className="manage-name">{a.pinned&&'📌 '}{a.featured&&<span className="badge b-amber" style={{marginRight:6}}><Icon name="sparkle" size={10}/>เด่น</span>}{a.title}</div>
               <div className="manage-sub" style={{display:'block'}}>
                 <div style={{marginBottom:4}}>{a.body}</div>
                 <span style={{color:'var(--text-faint)'}}>{a.date} · โดย {a.createdBy||'-'}</span>
@@ -1835,7 +1874,7 @@ function AnnouncementsAdmin({user,announcements,toast,reload}){
       </div>
 
       {editItem!==null&&(
-        <AnnouncementFormModal item={editItem} saving={saving} onSave={handleSave} onClose={()=>setEditItem(null)}/>
+        <AnnouncementFormModal item={editItem} announcements={announcements} saving={saving} onSave={handleSave} onClose={()=>setEditItem(null)}/>
       )}
 
       {delConfirm&&(
@@ -1979,6 +2018,46 @@ function PublicPreview({bookings,onWantAuth}){
   </div>);
 }
 
+/* ====== Popup ประกาศเด่น (ขึ้นตอน login ถ้ามีประกาศ featured) ====== */
+function AnnouncementPopup({items,onClose}){
+  const [idx,setIdx]=useState(0);
+  const [dontShow,setDontShow]=useState(false);
+  const item=items[idx];
+  const isLast=idx>=items.length-1;
+  return(
+    <div className="overlay" onClick={()=>onClose(dontShow)}>
+      <div className="modal" style={{maxWidth:420}} onClick={e=>e.stopPropagation()}>
+        <div className="announce-popup-hero">
+          <button className="modal-x" onClick={()=>onClose(dontShow)}><Icon name="x" size={18}/></button>
+          <Icon name="megaphone" size={42} sw={1.3}/>
+        </div>
+        <div style={{padding:'20px 22px'}}>
+          <div style={{fontSize:11,color:'var(--text-faint)',marginBottom:7,display:'flex',alignItems:'center',gap:5}}><Icon name="calendar" size={12}/>{item.date}</div>
+          <div style={{fontSize:17,fontWeight:700,marginBottom:10,lineHeight:1.4}}>{item.title}</div>
+          <div style={{fontSize:13,color:'var(--text-muted)',lineHeight:1.7,maxHeight:180,overflowY:'auto',whiteSpace:'pre-wrap'}}>{item.body}</div>
+
+          {items.length>1&&
+          <div style={{display:'flex',justifyContent:'center',gap:6,margin:'18px 0 2px'}}>
+            {items.map((_,i)=><span key={i} onClick={()=>setIdx(i)} style={{width:i===idx?18:7,height:7,borderRadius:4,background:i===idx?'var(--primary)':'var(--border-strong)',cursor:'pointer',transition:'.15s'}}></span>)}
+          </div>}
+
+          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12.5,color:'var(--text-muted)',margin:'18px 0 14px',cursor:'pointer'}}>
+            <input type="checkbox" checked={dontShow} onChange={e=>setDontShow(e.target.checked)} style={{width:16,height:16,accentColor:'var(--primary)',cursor:'pointer'}}/>
+            ไม่แสดงอีกสำหรับวันนี้
+          </label>
+
+          <div style={{display:'flex',gap:10}}>
+            {idx>0&&<button className="btn btn-ghost" onClick={()=>setIdx(i=>i-1)}><Icon name="cleft" size={16}/></button>}
+            <button className="btn btn-primary btn-block" onClick={()=>{ if(!isLast) setIdx(i=>i+1); else onClose(dontShow); }}>
+              {!isLast?'ถัดไป':'รับทราบ'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App(){
   const [ready,setReady]=useState(false);
   const [bootError,setBootError]=useState('');
@@ -2001,6 +2080,8 @@ function App(){
   const [saving,setSaving]=useState(null);           // overlay ระหว่างบันทึก {text}
   const [successMsg,setSuccessMsg]=useState(null);   // ติ๊กถูกเขียวกลางจอ
   const [wantAuth,setWantAuth]=useState(false);       // ผู้ใช้กด "เข้าสู่ระบบ" จากหน้า preview สาธารณะ
+  const [showAnnouncePopup,setShowAnnouncePopup]=useState(false);
+  const popupCheckedRef=useRef(false);
   const [pendingLine,setPendingLine]=useState(null);  // โปรไฟล์ LINE ที่ยังไม่เคยผูกบัญชี (needsRegister)
   const [busyLine,setBusyLine]=useState(false);       // กำลังแลก code กับ LINE อยู่
 
@@ -2040,6 +2121,22 @@ function App(){
 
   // ── auth ──
   const onLogin=u=>{const su=shapeUser(u);setUser(su);safeStore.set('mrb_user',JSON.stringify(su));setPendingLine(null);setWantAuth(false);toast('ยินดีต้อนรับ '+su.nick,'ok');};
+
+  // ── Popup ประกาศเด่น: แสดงครั้งเดียวตอนเข้าระบบสำเร็จ (เว้นถ้าติ๊ก "ไม่แสดงอีกวันนี้" ไว้แล้ว) ──
+  useEffect(()=>{
+    if(user&&ready&&!popupCheckedRef.current){
+      popupCheckedRef.current=true;
+      const featured=announcements.filter(a=>a.featured).slice(0,4);
+      if(featured.length>0){
+        const dismissedDate=safeStore.get('mrb_announce_dismiss_date');
+        if(dismissedDate!==TODAY) setShowAnnouncePopup(true);
+      }
+    }
+  },[user,ready,announcements]);
+  const closeAnnouncePopup=(dontShowToday)=>{
+    setShowAnnouncePopup(false);
+    if(dontShowToday) safeStore.set('mrb_announce_dismiss_date',TODAY);
+  };
   const logout=()=>{safeStore.del('mrb_user');setUser(null);setPage('home');setWantAuth(false);};
 
   // ── LINE Login callback: ตรวจ ?code= ใน URL ตอนกลับมาจากหน้ายืนยันตัวตน LINE ──
@@ -2144,6 +2241,7 @@ function App(){
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
       {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)} logout={logout}/>}
+      {showAnnouncePopup&&<AnnouncementPopup items={announcements.filter(a=>a.featured).slice(0,4)} onClose={closeAnnouncePopup}/>}
       {saving&&<SavingOverlay text={saving.text}/>}
       {successMsg&&<SuccessCheck msg={successMsg}/>}
       {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
