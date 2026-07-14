@@ -195,6 +195,8 @@ input,select,textarea{font-family:inherit}
 .tl-room small{font-size:10.5px;color:var(--text-faint);font-weight:400}
 .tl-room-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
 .tl-track{position:relative;height:44px}
+.tl-sticky-col{position:sticky;left:0;z-index:4;background:var(--surface)}
+.holiday-banner{display:flex;align-items:center;gap:9px;background:var(--red-bg);border:1px solid var(--red);color:var(--red-tx);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;font-weight:500}
 .tl-grid{position:absolute;inset:0;display:flex}.tl-grid span{flex:1;border-left:1px dashed var(--border)}
 .tl-block{position:absolute;top:4px;height:36px;border-radius:8px;padding:5px 9px;font-size:10.5px;font-weight:500;color:#fff;overflow:hidden;cursor:pointer;transition:.15s;box-shadow:var(--shadow-sm);z-index:2}
 .tl-block:hover{filter:brightness(1.08);transform:translateY(-1px)}.tl-block small{display:block;font-size:9px;opacity:.92;font-weight:400}
@@ -516,6 +518,7 @@ function Icon({name,size=18,sw=1.8}){
     line:<><path d="M4 8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4H9l-4 3v-3a4 4 0 0 1-1-1z"/></>,
     qrcode:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM14 20h3M20 14v3M20 20v.01M17 17h.01"/></>,
     eye:<><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></>,
+    flag:<><path d="M5 3v18"/><path d="M5 4h13l-3 4.5L18 13H5"/></>,
     menu:<><path d="M3 6h18M3 12h18M3 18h18"/></>,
   };
   return <svg {...p}>{M[name]||null}</svg>;
@@ -549,6 +552,27 @@ const EXTRAS_LIST=[
 ];
 const ROOM=id=>ROOMS.find(r=>r.id===id)||{id:id,name:id,cap:0,eq:[],g:['#64748B','#334155']};
 const DAY_START=7*60, DAY_END=20*60;
+
+// วันหยุดตามประเพณีบริษัท ประจำปี 2569 (ประกาศ ณ วันที่ 1 พ.ย. 2568)
+const COMPANY_HOLIDAYS=[
+  {date:'2026-01-01',name:'วันขึ้นปีใหม่'},
+  {date:'2026-03-03',name:'วันมาฆบูชา'},
+  {date:'2026-04-06',name:'วันจักรี'},
+  {date:'2026-04-13',name:'วันสงกรานต์'},
+  {date:'2026-04-14',name:'วันสงกรานต์'},
+  {date:'2026-05-01',name:'วันแรงงานแห่งชาติ'},
+  {date:'2026-05-31',name:'วันวิสาขบูชา'},
+  {date:'2026-06-03',name:'วันเฉลิมพระชนมพรรษาพระราชินี'},
+  {date:'2026-07-28',name:'วันเฉลิมพระชนมพรรษา ร.10'},
+  {date:'2026-07-29',name:'วันอาสาฬหบูชา'},
+  {date:'2026-08-12',name:'วันแม่แห่งชาติ'},
+  {date:'2026-10-13',name:'วันนวมินทรมหาราช'},
+  {date:'2026-10-23',name:'วันปิยมหาราช'},
+  {date:'2026-12-05',name:'วันพ่อแห่งชาติ'},
+  {date:'2026-12-31',name:'วันสิ้นปี'},
+];
+const HOLIDAY_DATES=COMPANY_HOLIDAYS.map(h=>h.date);
+const holidayOf=d=>COMPANY_HOLIDAYS.find(h=>h.date===d);
 
 let _bid=0; // ตัวนับ booking id ชั่วคราว (optimistic ก่อน reload จาก sheet)
 
@@ -610,6 +634,7 @@ const NAV=[
   {id:'calendar',label:'ปฏิทิน',          icon:'calendar'},
   {id:'mine',    label:'การจองของฉัน',    icon:'mine'},
   {id:'rooms',   label:'ห้องประชุม',      icon:'room'},
+  {id:'holidays',label:'วันหยุดบริษัท',   icon:'flag'},
   {id:'manage',  label:'จัดการห้อง',      icon:'settings', adminOnly:true},
   {id:'reports', label:'รายงาน',          icon:'report'},
   {id:'settings',label:'ตั้งค่า',          icon:'settings'},
@@ -657,7 +682,7 @@ function MobileDrawer({page,go,user,openProfile,close,logout}){
   </>);
 }
 
-const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
+const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
 function Topbar({page,dark,setDark,search,setSearch,user,onOpenMenu}){
   return(
     <header className="topbar">
@@ -839,10 +864,12 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
 
 /* ====== CALENDAR ====== */
 function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
-  const [view,setView]=useState('sheet');
+  const [view,setView]=useState('day'); // เริ่มที่มุมมอง "วัน" เพื่อให้เห็นเวลาปัจจุบันทันทีที่เปิดหน้า
   const [sheetRoom,setSheetRoom]=useState((ROOMS[0]&&ROOMS[0].id)||'');
   const [dayRoomFilter,setDayRoomFilter]=useState('all');
   const [now,setNow]=useState(Date.now());
+  const timelineRef=useRef(null);
+  const trackRef=useRef(null);
   useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
   const nowMin=new Date(now).getHours()*60+new Date(now).getMinutes();
   const H_START=7,H_END=20,SPAN=(H_END-H_START)*60;
@@ -851,12 +878,21 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
   const BH_S=9*60,BH_E=18*60; // เวลาทำการปกติ 09:00-18:00 — ใช้แรเงาให้เห็นชัดในตาราง
   const bhPos={left:(BH_S-H_START*60)/SPAN*100+'%',width:(BH_E-BH_S)/SPAN*100+'%'};
   const nowPosDay=(nowMin>=H_START*60&&nowMin<=H_END*60)?(nowMin-H_START*60)/SPAN*100+'%':null;
+  const nowFracDay=(nowMin-H_START*60)/SPAN;
+  // เลื่อนตารางไปยังตำแหน่งเวลาปัจจุบันอัตโนมัติ ไม่ต้องเลื่อนดูเอง (เฉพาะวันนี้ + มุมมองวัน)
+  useEffect(()=>{
+    if(view==='day'&&cursor===TODAY&&timelineRef.current&&trackRef.current){
+      const trackWidth=trackRef.current.offsetWidth;
+      const target=Math.max(0,nowFracDay*trackWidth-80);
+      timelineRef.current.scrollLeft=target;
+    }
+  },[view,cursor]);
   // sheet: 07:00-20:00
   const SH=7*60,SHE=20*60,SHS=SHE-SH,shCols=[7,8,9,10,11,12,13,14,15,16,17,18,19];
   const spos=(s,e)=>{const a=Math.max(t2m(s),SH),b=Math.min(t2m(e),SHE);if(b<=a)return null;return{left:(a-SH)/SHS*100+'%',width:(b-a)/SHS*100+'%'};};
   const bhPosSheet={left:(BH_S-SH)/SHS*100+'%',width:(BH_E-BH_S)/SHS*100+'%'};
   const nowPosSheet=(nowMin>=SH&&nowMin<=SHE)?(nowMin-SH)/SHS*100+'%':null;
-  const HOLIDAYS=['2026-06-03']; // วันเฉลิมฯ (ตัวอย่างวันหยุด)
+  // ใช้ HOLIDAY_DATES จากรายการวันหยุดบริษัท (global const ด้านบนไฟล์)
   const weekRows=useMemo(()=>{
     const d=parseISO(cursor),y=d.getFullYear(),m=d.getMonth(),dim=new Date(y,m+1,0).getDate();
     const weeks=[];let cur=[];
@@ -896,7 +932,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
             <div key={wi}>
               <div className="sheet-weekhdr">สัปดาห์ที่ {wi+1}</div>
               {wk.map(d=>{
-                const dt=parseISO(d),hol=HOLIDAYS.includes(d);
+                const dt=parseISO(d),hol=HOLIDAY_DATES.includes(d);
                 const list=bookings.filter(b=>b.room===sheetRoom&&b.date===d&&!['draft','cancelled'].includes(b.status));
                 return(<div className={"sheet-row"+(hol?' holi':'')} key={d}>
                   <div className={"sheet-day"+(d===TODAY?' today':'')}>{TH_DOW[dt.getDay()]}<small>{dt.getDate()}/{dt.getMonth()+1}</small></div>
@@ -906,7 +942,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
                     {d===TODAY&&nowPosSheet&&<div className="now-line" style={{left:nowPosSheet}} title={`ตอนนี้ ${String(new Date(now).getHours()).padStart(2,'0')}:${String(new Date(now).getMinutes()).padStart(2,'0')}`}></div>}
                     {!hol&&<div className="sheet-empty" onClick={()=>openForm({roomId:sheetRoom,date:d})} title="กดเพื่อจองวันนี้"></div>}
                     {!hol&&list.map(b=>{const p=spos(b.s,b.e);if(!p)return null;return<div key={b.id} className="sheet-block" style={{...p,background:STATUS[b.status].bar}} onClick={ev=>{ev.stopPropagation();openDetail(b);}} title={b.title+' · '+b.by}>{b.title}<small> {b.s}-{b.e}</small></div>;})}
-                    {hol&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10.5,color:'var(--text-faint)',fontWeight:500}}>วันหยุด</div>}
+                    {hol&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10.5,color:'var(--text-faint)',fontWeight:500}}>วันหยุด · {holidayOf(d)?.name||''}</div>}
                   </div>
                 </div>);
               })}
@@ -922,9 +958,10 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
       </>}
 
       {view==='day'&&<>
-        <div className="timeline"><div className="tl-inner">
+        {HOLIDAY_DATES.includes(cursor)&&<div className="holiday-banner"><Icon name="calendar" size={15}/>วันหยุดบริษัท: {holidayOf(cursor)?.name}</div>}
+        <div className="timeline" ref={timelineRef}><div className="tl-inner">
           <div className="tl-head">
-            <div className="room-select-wrap" style={{minWidth:0,width:'100%'}}>
+            <div className="room-select-wrap tl-sticky-col" style={{minWidth:0,width:'100%'}}>
               <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
               <select className="inp room-select" style={{fontSize:12,padding:'7px 30px 7px 30px'}} value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
                 <option value="all">ทุกห้องประชุม</option>
@@ -934,16 +971,16 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
             </div>
             <div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div>
           </div>
-          {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map(r=>{
+          {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map((r,idx)=>{
             const list=bookings.filter(b=>b.room===r.id&&b.date===cursor&&b.status!=='draft');
             const gaps=freeGaps(r.id,cursor,bookings);
             return(
               <div className="tl-row" key={r.id}>
-                <div className="tl-room"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
-                <div className="tl-track">
+                <div className="tl-room tl-sticky-col"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
+                <div className="tl-track" ref={idx===0?trackRef:null}>
                   <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
                   <div className="bh-shade" style={bhPos}></div>
-                  {cursor===TODAY&&nowPosDay&&<div className="now-line" style={{left:nowPosDay}}><span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span></div>}
+                  {cursor===TODAY&&nowPosDay&&<div className="now-line" style={{left:nowPosDay}}>{idx===0&&<span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span>}</div>}
                   {gaps.map((g,i)=><div key={'g'+i} className="tl-gap" style={pos(g.s,g.e)} onClick={()=>openForm({roomId:r.id,date:cursor,s:g.s,e:g.e})} title="กดเพื่อจองช่วงนี้">+ ว่าง</div>)}
                   {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,opacity:b.status==='cancelled'?.5:1}} onClick={()=>openDetail(b)}>{b.title}<small>{b.s} · {b.by}</small></div>)}
                 </div>
@@ -1029,6 +1066,35 @@ function RoomsPage({bookings,go,openForm}){
       <div className="row-between"><button className="btn btn-ghost btn-sm" onClick={()=>go('calendar')}>ดูตาราง</button><button className="btn btn-primary btn-sm" onClick={()=>openForm({roomId:r.id})}>จองห้องนี้</button></div>
     </div>);
   })}</div>);
+}
+
+/* ====== วันหยุดบริษัท ====== */
+function CompanyHolidaysPage(){
+  const upcoming=COMPANY_HOLIDAYS.filter(h=>h.date>=TODAY);
+  const past=COMPANY_HOLIDAYS.filter(h=>h.date<TODAY);
+  const Row=h=>{
+    const dt=parseISO(h.date),isToday=h.date===TODAY;
+    const dow=dt.getDay();
+    return(<div className="li" key={h.date} style={isToday?{background:'var(--red-bg)',borderRadius:10,padding:'13px 10px'}:{}}>
+      <div className="li-time" style={{width:70}}>{String(dt.getDate()).padStart(2,'0')}<small>{TH_MONTHS[dt.getMonth()]}</small></div>
+      <div className="li-body"><div className="li-title">{h.name}</div><div className="li-sub">วัน{['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][dow]}{(dow===0||dow===6)?' · ตรงกับวันหยุดสุดสัปดาห์':''}</div></div>
+      {isToday&&<span className="badge b-red"><span className="d"></span>วันนี้</span>}
+    </div>);
+  };
+  return(<div style={{maxWidth:680,margin:'0 auto'}}>
+    <div className="card pad" style={{marginBottom:16}}>
+      <div className="section-title" style={{margin:'0 0 4px'}}><Icon name="flag" size={17}/>วันหยุดตามประเพณี ประจำปี {parseISO(TODAY).getFullYear()+543}</div>
+      <p style={{fontSize:12,color:'var(--text-muted)',margin:0}}>รวม {COMPANY_HOLIDAYS.length} วัน · หมายเหตุ: สำหรับพนักงานประจำสำนักงาน หากวันหยุดตรงกับวันเสาร์หรืออาทิตย์ ให้ชดเชยวันหยุดเป็นวันทำงานถัดไปตามประกาศบริษัท</p>
+    </div>
+    <div className="card pad">
+      <div className="section-title" style={{margin:'0 0 4px'}}>วันหยุดที่กำลังจะถึง</div>
+      {upcoming.length?upcoming.map(Row):<div className="empty">ไม่มีวันหยุดที่เหลือในปีนี้</div>}
+    </div>
+    {past.length>0&&<div className="card pad" style={{marginTop:16,opacity:.7}}>
+      <div className="section-title" style={{margin:'0 0 4px'}}>ผ่านไปแล้ว</div>
+      {past.map(Row)}
+    </div>}
+  </div>);
 }
 
 /* ====== CHARTS ====== */
@@ -1610,9 +1676,11 @@ function QRModal({url,close}){
 /* ====== PUBLIC PREVIEW (ดูตารางห้องได้โดยไม่ต้องล็อกอิน — จองต้องล็อกอินเท่านั้น) ====== */
 function PublicPreview({bookings,onWantAuth}){
   const [showQR,setShowQR]=useState(false);
-  const [pview,setPview]=useState('week'); // 'week' | 'day'
+  const [pview,setPview]=useState('day'); // เริ่มที่ "วันนี้" เพื่อให้เห็นเวลาปัจจุบันทันที
   const [dayRoomFilter,setDayRoomFilter]=useState('all');
   const [now,setNow]=useState(Date.now());
+  const timelineRef=useRef(null);
+  const trackRef=useRef(null);
   useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
   const wk = startOfWeek(TODAY);
   const days = [...Array(7)].map((_,i)=>addDays(wk,i));
@@ -1625,6 +1693,15 @@ function PublicPreview({bookings,onWantAuth}){
   const bhPos={left:(BH_S-H_START*60)/SPAN*100+'%',width:(BH_E-BH_S)/SPAN*100+'%'};
   const nowMin=new Date(now).getHours()*60+new Date(now).getMinutes();
   const nowPos=(nowMin>=H_START*60&&nowMin<=H_END*60)?(nowMin-H_START*60)/SPAN*100+'%':null;
+  const nowFrac=(nowMin-H_START*60)/SPAN;
+  useEffect(()=>{
+    if(pview==='day'&&timelineRef.current&&trackRef.current){
+      const trackWidth=trackRef.current.offsetWidth;
+      const target=Math.max(0,nowFrac*trackWidth-80);
+      timelineRef.current.scrollLeft=target;
+    }
+  },[pview]);
+  const todayHoliday=holidayOf(TODAY);
 
   return(<div style={{minHeight:'100vh',background:'var(--bg)'}}>
     <header className="topbar preview-topbar">
@@ -1645,22 +1722,24 @@ function PublicPreview({bookings,onWantAuth}){
           </div>
         </div>
         <p style={{fontSize:12.5,color:'var(--text-muted)',margin:'0 0 16px'}}>ต้องการจองห้องประชุม? <b style={{color:'var(--primary)',cursor:'pointer'}} onClick={onWantAuth}>เข้าสู่ระบบที่นี่</b></p>
+        {todayHoliday&&<div className="holiday-banner"><Icon name="calendar" size={15}/>วันนี้เป็นวันหยุดบริษัท: {todayHoliday.name}</div>}
 
         {pview==='week'&&<div className="week-grid">
           {days.map(d=>{
             const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
             const dt=parseISO(d);
+            const dHol=holidayOf(d);
             return(<div key={d} className={"wcol"+(d===TODAY?' today':'')}>
               <div className="wc-head">{TH_DOW[dt.getDay()]}<b>{dt.getDate()}</b></div>
-              {list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar,cursor:'default'}}><b>{ROOM(b.room).name}</b><small>{b.s}-{b.e} · {b.title}</small></div>):<div className="wc-empty">ว่าง</div>}
+              {dHol?<div className="wc-empty" style={{color:'var(--red-tx)'}}>หยุด: {dHol.name}</div>:(list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar,cursor:'default'}}><b>{ROOM(b.room).name}</b><small>{b.s}-{b.e} · {b.title}</small></div>):<div className="wc-empty">ว่าง</div>)}
             </div>);
           })}
         </div>}
 
         {pview==='day'&&<>
-          <div className="timeline"><div className="tl-inner">
+          <div className="timeline" ref={timelineRef}><div className="tl-inner">
             <div className="tl-head">
-              <div className="room-select-wrap" style={{minWidth:0,width:'100%'}}>
+              <div className="room-select-wrap tl-sticky-col" style={{minWidth:0,width:'100%'}}>
                 <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
                 <select className="inp room-select" style={{fontSize:12,padding:'7px 30px 7px 30px'}} value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
                   <option value="all">ทุกห้องประชุม</option>
@@ -1670,14 +1749,14 @@ function PublicPreview({bookings,onWantAuth}){
               </div>
               <div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div>
             </div>
-            {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map(r=>{
+            {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map((r,idx)=>{
               const list=bookings.filter(b=>b.room===r.id&&b.date===TODAY&&ACTIVE.includes(b.status));
               return(<div className="tl-row" key={r.id}>
-                <div className="tl-room"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
-                <div className="tl-track">
+                <div className="tl-room tl-sticky-col"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
+                <div className="tl-track" ref={idx===0?trackRef:null}>
                   <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
                   <div className="bh-shade" style={bhPos}></div>
-                  {nowPos&&<div className="now-line" style={{left:nowPos}}><span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span></div>}
+                  {nowPos&&<div className="now-line" style={{left:nowPos}}>{idx===0&&<span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span>}</div>}
                   {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,cursor:'default'}}>{b.title}<small>{b.s}-{b.e}</small></div>)}
                 </div>
               </div>);
@@ -1845,6 +1924,7 @@ function App(){
           {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
           {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
+          {page==='holidays'&&<CompanyHolidaysPage/>}
           {page==='manage'&&<RoomsAdmin user={user} bookings={bookings} toast={toast} reload={reload}/>}
           {page==='reports'&&<ReportsPage/>}
           {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} logout={logout}/>}
