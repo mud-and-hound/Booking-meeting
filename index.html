@@ -314,6 +314,8 @@ select.inp{cursor:pointer}
 .announce-checkbox input{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
 /* การ์ดประกาศสไตล์ carousel (ข้อความล้วน) */
 .announce-cards-row{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 10px}
+.scroll-hint-arrow{position:absolute;right:6px;top:0;bottom:10px;margin:auto 0;width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(37,99,235,.4);pointer-events:none;animation:hintNudge 1.1s ease-in-out infinite}
+@keyframes hintNudge{0%,100%{transform:translateX(0);opacity:1}50%{transform:translateX(7px);opacity:.55}}
 .announce-card{flex-shrink:0;width:210px;border:1.5px solid var(--border-strong);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--surface);transition:.15s;cursor:pointer}
 .announce-card:hover{border-color:var(--primary);box-shadow:var(--shadow);transform:translateY(-2px)}
 .announce-card-badge{align-self:flex-start;font-size:10px;font-weight:700;color:#fff;padding:3px 10px;border-radius:20px;white-space:nowrap}
@@ -334,6 +336,9 @@ select.inp{cursor:pointer}
 @media(max-width:680px){.modal{max-width:none;border-radius:18px 18px 0 0;position:fixed;bottom:0;max-height:92vh;animation:sheet .26s}@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}}
 
 .mobilenav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:40;justify-content:space-around}
+.scroll-top-btn{position:fixed;right:22px;bottom:28px;width:46px;height:46px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-lg);z-index:45;animation:scrollBtnIn .2s}
+@media(max-width:880px){.scroll-top-btn{bottom:calc(74px + env(safe-area-inset-bottom))}}
+@keyframes scrollBtnIn{from{opacity:0;transform:translateY(12px) scale(.9)}to{opacity:1;transform:none}}
 .mn-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--text-faint);padding:5px 8px;border-radius:10px;transition:.15s;flex:1}
 .mn-item.active{color:var(--primary)}.mn-item:active{transform:scale(.92)}
 @media(max-width:880px){.mobilenav{display:flex}}
@@ -800,6 +805,19 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,anno
   const q=search.trim().toLowerCase();
   const availRooms=ROOMS.filter(r=>!q||r.name.toLowerCase().includes(q));
   const activeCheckin=bookings.find(b=>b.status==='in-use'&&!b.checkedIn&&b.autoRelease);
+  const cardsRowRef=useRef(null);
+  const [showHint,setShowHint]=useState(false);
+  useEffect(()=>{
+    const el=cardsRowRef.current;
+    if(el && announcements && announcements.length>1){
+      const overflowing=el.scrollWidth>el.clientWidth+8;
+      if(overflowing){
+        setShowHint(true);
+        const t=setTimeout(()=>setShowHint(false),4500);
+        return ()=>clearTimeout(t);
+      }
+    }
+  },[announcements]);
   return(
     <div>
       {activeCheckin&&<CheckinBar b={activeCheckin} now={now} checkIn={checkIn}/>}
@@ -824,7 +842,12 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,anno
             {announcements&&announcements.length>0&&<span className="link" onClick={()=>go('allAnnouncements')}>ดูทั้งหมด →</span>}
           </div>
           {announcements&&announcements.length?
-            <div className="announce-cards-row">{announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a} onView={onViewAnnounce}/>)}</div>
+            <div style={{position:'relative'}}>
+              <div className="announce-cards-row" ref={cardsRowRef} onScroll={()=>setShowHint(false)}>
+                {announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a} onView={onViewAnnounce}/>)}
+              </div>
+              {showHint&&<div className="scroll-hint-arrow"><Icon name="cright" size={17} sw={2.4}/></div>}
+            </div>
             :<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
         </div>
       </div>
@@ -2133,6 +2156,11 @@ function App(){
   const [editing,setEditing]=useState(null);
   const [showProfile,setShowProfile]=useState(false);
   const [showMobileMenu,setShowMobileMenu]=useState(false);
+  const scrollRef=useRef(null);
+  const [showScrollTop,setShowScrollTop]=useState(false);
+  const handleMainScroll=()=>{ if(scrollRef.current) setShowScrollTop(scrollRef.current.scrollTop>320); };
+  const scrollToTop=()=>{ if(scrollRef.current) scrollRef.current.scrollTo({top:0,behavior:'smooth'}); };
+  useEffect(()=>{ if(scrollRef.current) scrollRef.current.scrollTop=0; setShowScrollTop(false); },[page]);
   const [toastMsg,setToastMsg]=useState(null);
   const [search,setSearch]=useState('');
   const [now,setNow]=useState(Date.now());
@@ -2288,7 +2316,7 @@ function App(){
       <Sidebar page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} logout={logout}/>
       <div className="main">
         <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user} onOpenMenu={()=>setShowMobileMenu(true)}/>
-        <div className="scroll">
+        <div className="scroll" ref={scrollRef} onScroll={handleMainScroll}>
           {refreshing ? <SkeletonContent/> : <>
           {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm} announcements={announcements} onViewAnnounce={openAnnouncement}/>}
           {page==='form'&&<BookingForm key={JSON.stringify(prefill)} bookings={bookings} addBooking={addBooking} toast={toast} user={user} go={go} prefill={prefill} clearPrefill={()=>setPrefill({})}/>}
@@ -2311,6 +2339,7 @@ function App(){
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
       {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)} logout={logout}/>}
+      {showScrollTop&&<button className="scroll-top-btn" onClick={scrollToTop} title="เลื่อนขึ้นบนสุด"><span style={{display:'flex',transform:'rotate(180deg)'}}><Icon name="cdown" size={20} sw={2.4}/></span></button>}
       {showAnnouncePopup&&<AnnouncementPopup items={announcements.filter(a=>a.featured).slice(0,4)} onClose={closeAnnouncePopup} onView={openAnnouncement}/>}
       {saving&&<SavingOverlay text={saving.text}/>}
       {successMsg&&<SuccessCheck msg={successMsg}/>}
