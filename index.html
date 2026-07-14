@@ -314,13 +314,13 @@ select.inp{cursor:pointer}
 .announce-checkbox input{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
 /* การ์ดประกาศสไตล์ carousel (ข้อความล้วน) */
 .announce-cards-row{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 10px}
-.announce-card{flex-shrink:0;width:210px;border:1.5px solid var(--border-strong);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--surface);transition:.15s}
-.announce-card:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+.announce-card{flex-shrink:0;width:210px;border:1.5px solid var(--border-strong);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--surface);transition:.15s;cursor:pointer}
+.announce-card:hover{border-color:var(--primary);box-shadow:var(--shadow);transform:translateY(-2px)}
 .announce-card-badge{align-self:flex-start;font-size:10px;font-weight:700;color:#fff;padding:3px 10px;border-radius:20px;white-space:nowrap}
 .announce-card-title{font-size:14px;font-weight:700;line-height:1.4;color:var(--text)}
+.announce-card-preview{font-size:12px;color:var(--text-muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:20px}
+.announce-card-more{font-size:11.5px;color:var(--primary);font-weight:600}
 .announce-card-date{font-size:10.5px;color:var(--text-faint);display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
-.announce-card-link{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--primary);font-weight:600}
-.announce-card-link:hover{text-decoration:underline}
 @media(max-width:680px){
   .announce-card{width:180px}
 }
@@ -708,7 +708,7 @@ function MobileDrawer({page,go,user,openProfile,close,logout}){
   </>);
 }
 
-const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',announce:'จัดการประกาศ',allAnnouncements:'ประกาศทั้งหมด',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
+const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',announce:'จัดการประกาศ',allAnnouncements:'ประกาศทั้งหมด',announcementDetail:'รายละเอียดประกาศ',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
 function Topbar({page,dark,setDark,search,setSearch,user,onOpenMenu}){
   return(
     <header className="topbar">
@@ -717,7 +717,6 @@ function Topbar({page,dark,setDark,search,setSearch,user,onOpenMenu}){
       {page==='home'&&<div className="search hide-mobile"><Icon name="search" size={16}/><input placeholder="ค้นหาห้องประชุม, อาคาร หรืออุปกรณ์" value={search} onChange={e=>setSearch(e.target.value)}/></div>}
       <div className="topbar-actions">
         <button className="icon-btn" onClick={()=>setDark(d=>!d)} title="สลับธีม"><Icon name={dark?'sun':'moon'} size={18}/></button>
-        <button className="icon-btn" title="แจ้งเตือน"><Icon name="bell" size={18}/><span className="badge-dot">3</span></button>
         <button className="icon-btn hide-mobile" title="เต็มจอ"><Icon name="expand" size={17}/></button>
       </div>
     </header>
@@ -782,20 +781,20 @@ function ScrollingText({text,maxHeight=52}){
 }
 
 /* ====== การ์ดประกาศสี่เหลี่ยม (สไตล์ LINE OA carousel — ข้อความล้วน ไม่มีรูป) ====== */
-function AnnouncementCard({item}){
+function AnnouncementCard({item,onView}){
   const badge = item.pinned?{label:'📌 ปักหมุด',bg:'#F59E0B'}:item.featured?{label:'⭐ เด่น',bg:'#8B5CF6'}:{label:'ประกาศ',bg:'#2563EB'};
   return(
-    <div className="announce-card">
+    <div className="announce-card" onClick={()=>onView&&onView(item)}>
       <span className="announce-card-badge" style={{background:badge.bg}}>{badge.label}</span>
       <div className="announce-card-title">{item.title}</div>
-      <ScrollingText text={item.body} maxHeight={item.link?70:92}/>
-      {item.link&&<a href={item.link} target="_blank" rel="noopener noreferrer" className="announce-card-link" onClick={e=>e.stopPropagation()}><Icon name="link" size={12}/>เพิ่มเติม</a>}
+      <div className="announce-card-preview">{item.body}</div>
+      <div className="announce-card-more">ดูรายละเอียด →</div>
       <div className="announce-card-date"><Icon name="calendar" size={11}/>{item.date}</div>
     </div>
   );
 }
 
-function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,announcements}){
+function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,announcements,onViewAnnounce}){
   const today=bookings.filter(b=>b.date===TODAY);
   const myToday=today.filter(b=>b.owner===user.id&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
   const q=search.trim().toLowerCase();
@@ -825,7 +824,7 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,anno
             {announcements&&announcements.length>0&&<span className="link" onClick={()=>go('allAnnouncements')}>ดูทั้งหมด →</span>}
           </div>
           {announcements&&announcements.length?
-            <div className="announce-cards-row">{announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a}/>)}</div>
+            <div className="announce-cards-row">{announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a} onView={onViewAnnounce}/>)}</div>
             :<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
         </div>
       </div>
@@ -1160,6 +1159,24 @@ function RoomsPage({bookings,go,openForm}){
 
 /* ====== วันหยุดบริษัท ====== */
 /* ====== ประกาศทั้งหมด (หน้าข่าวสารเต็ม) ====== */
+/* ====== หน้ารายละเอียดประกาศเดี่ยว (กดจากการ์ดแล้วเด้งมาที่นี่) ====== */
+function AnnouncementDetailPage({item,go}){
+  if(!item) return(<div className="card pad"><div className="empty">ไม่พบประกาศนี้ อาจถูกลบไปแล้ว</div></div>);
+  return(<div style={{maxWidth:640,margin:'0 auto'}}>
+    <span className="link" onClick={()=>go('home')} style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:14}}><Icon name="cleft" size={14}/>กลับหน้าหลัก</span>
+    <div className="card pad">
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+        {item.pinned&&<span className="badge b-amber"><span className="d"></span>📌 ปักหมุด</span>}
+        {item.featured&&<span className="badge" style={{background:'#EDE9FE',color:'#7C3AED'}}><span className="d" style={{background:'#7C3AED'}}></span>⭐ เด่น</span>}
+        <span style={{fontSize:11,color:'var(--text-faint)',marginLeft:'auto',display:'flex',alignItems:'center',gap:4}}><Icon name="calendar" size={11}/>{item.date}</span>
+      </div>
+      <div style={{fontSize:20,fontWeight:700,marginBottom:16,lineHeight:1.4}}>{item.title}</div>
+      <div style={{fontSize:14,color:'var(--text-muted)',lineHeight:1.85,whiteSpace:'pre-wrap',marginBottom:item.link?20:0}}>{item.body}</div>
+      {item.link&&<a href={item.link} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm"><Icon name="link" size={14}/>เพิ่มเติม</a>}
+    </div>
+  </div>);
+}
+
 function AllAnnouncementsPage({announcements,go}){
   return(<div style={{maxWidth:720,margin:'0 auto'}}>
     <span className="link" onClick={()=>go('home')} style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:14}}><Icon name="cleft" size={14}/>กลับหน้าหลัก</span>
@@ -2078,7 +2095,7 @@ function PublicPreview({bookings,onWantAuth}){
 }
 
 /* ====== Popup ประกาศเด่น (ขึ้นตอน login ถ้ามีประกาศ featured) ====== */
-function AnnouncementPopup({items,onClose}){
+function AnnouncementPopup({items,onClose,onView}){
   const [dontShow,setDontShow]=useState(false);
   return(
     <div className="overlay" onClick={()=>onClose(dontShow)}>
@@ -2089,7 +2106,7 @@ function AnnouncementPopup({items,onClose}){
           <button onClick={()=>onClose(dontShow)} style={{display:'flex',padding:6,borderRadius:8,background:'rgba(255,255,255,.18)',color:'#fff'}}><Icon name="x" size={16}/></button>
         </div>
         <div className="announce-cards-row" style={{padding:16}}>
-          {items.map(a=><AnnouncementCard key={a.id} item={a}/>)}
+          {items.map(a=><AnnouncementCard key={a.id} item={a} onView={onView}/>)}
         </div>
         <div className="announce-modal-foot">
           <label className="announce-checkbox">
@@ -2126,6 +2143,7 @@ function App(){
   const [successMsg,setSuccessMsg]=useState(null);   // ติ๊กถูกเขียวกลางจอ
   const [wantAuth,setWantAuth]=useState(false);       // ผู้ใช้กด "เข้าสู่ระบบ" จากหน้า preview สาธารณะ
   const [showAnnouncePopup,setShowAnnouncePopup]=useState(false);
+  const [viewAnnounce,setViewAnnounce]=useState(null);
   const popupCheckedRef=useRef(false);
   const [pendingLine,setPendingLine]=useState(null);  // โปรไฟล์ LINE ที่ยังไม่เคยผูกบัญชี (needsRegister)
   const [busyLine,setBusyLine]=useState(false);       // กำลังแลก code กับ LINE อยู่
@@ -2181,6 +2199,11 @@ function App(){
   const closeAnnouncePopup=(dontShowToday)=>{
     setShowAnnouncePopup(false);
     if(dontShowToday) safeStore.set('mrb_announce_dismiss_date',TODAY);
+  };
+  const openAnnouncement=(item)=>{
+    setViewAnnounce(item);
+    setShowAnnouncePopup(false);
+    setPage('announcementDetail');
   };
   const logout=()=>{safeStore.del('mrb_user');setUser(null);setPage('home');setWantAuth(false);};
 
@@ -2267,12 +2290,13 @@ function App(){
         <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user} onOpenMenu={()=>setShowMobileMenu(true)}/>
         <div className="scroll">
           {refreshing ? <SkeletonContent/> : <>
-          {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm} announcements={announcements}/>}
+          {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm} announcements={announcements} onViewAnnounce={openAnnouncement}/>}
           {page==='form'&&<BookingForm key={JSON.stringify(prefill)} bookings={bookings} addBooking={addBooking} toast={toast} user={user} go={go} prefill={prefill} clearPrefill={()=>setPrefill({})}/>}
           {/* API AI — หน้า ChatBot ถอดออกชั่วคราว (ดู AI_Module.js) */}
           {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
           {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
+          {page==='announcementDetail'&&<AnnouncementDetailPage item={viewAnnounce} go={go}/>}
           {page==='allAnnouncements'&&<AllAnnouncementsPage announcements={announcements} go={go}/>}
           {page==='holidays'&&<CompanyHolidaysPage/>}
           {page==='announce'&&<AnnouncementsAdmin user={user} announcements={announcements} toast={toast} reload={reload}/>}
@@ -2287,7 +2311,7 @@ function App(){
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
       {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)} logout={logout}/>}
-      {showAnnouncePopup&&<AnnouncementPopup items={announcements.filter(a=>a.featured).slice(0,4)} onClose={closeAnnouncePopup}/>}
+      {showAnnouncePopup&&<AnnouncementPopup items={announcements.filter(a=>a.featured).slice(0,4)} onClose={closeAnnouncePopup} onView={openAnnouncement}/>}
       {saving&&<SavingOverlay text={saving.text}/>}
       {successMsg&&<SuccessCheck msg={successMsg}/>}
       {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
