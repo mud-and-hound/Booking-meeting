@@ -2020,14 +2020,25 @@ function QRModal({url,close}){
 }
 
 /* ====== PUBLIC PREVIEW (ดูตารางห้องได้โดยไม่ต้องล็อกอิน — จองต้องล็อกอินเท่านั้น) ====== */
-function PublicPreview({bookings,onWantAuth}){
+function PublicPreview({bookings,announcements,onWantAuth}){
   const [showQR,setShowQR]=useState(false);
   const [pview,setPview]=useState('day'); // เริ่มที่ "วันนี้" เพื่อให้เห็นเวลาปัจจุบันทันที
   const [dayRoomFilter,setDayRoomFilter]=useState('all');
   const [now,setNow]=useState(Date.now());
+  const [pubView,setPubView]=useState('main'); // 'main' | 'detail' | 'all' — ดูประกาศได้แบบอ่านอย่างเดียว ไม่ต้อง login
+  const [pubItem,setPubItem]=useState(null);
   const timelineRef=useRef(null);
   const trackRef=useRef(null);
+  const cardsRowRef=useRef(null);
+  const [showHint,setShowHint]=useState(false);
   useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
+  useEffect(()=>{
+    const el=cardsRowRef.current;
+    if(el && announcements && announcements.length>1 && pubView==='main'){
+      const overflowing=el.scrollWidth>el.clientWidth+8;
+      if(overflowing){ setShowHint(true); const t=setTimeout(()=>setShowHint(false),4500); return ()=>clearTimeout(t); }
+    }
+  },[announcements,pubView]);
   const wk = startOfWeek(TODAY);
   const days = [...Array(7)].map((_,i)=>addDays(wk,i));
   const url = window.location.origin + window.location.pathname;
@@ -2048,6 +2059,8 @@ function PublicPreview({bookings,onWantAuth}){
     }
   },[pview]);
   const todayHoliday=holidayOf(TODAY);
+  const goPub=p=>{ if(p==='home') setPubView('main'); else if(p==='allAnnouncements') setPubView('all'); };
+  const openPubAnnounce=item=>{ setPubItem(item); setPubView('detail'); };
 
   return(<div style={{minHeight:'100vh',background:'var(--bg)'}}>
     <header className="topbar preview-topbar">
@@ -2059,6 +2072,23 @@ function PublicPreview({bookings,onWantAuth}){
       </div>
     </header>
     <div style={{padding:'22px 26px 60px',maxWidth:1100,margin:'0 auto'}}>
+      {pubView==='detail'&&<AnnouncementDetailPage item={pubItem} go={goPub}/>}
+      {pubView==='all'&&<AllAnnouncementsPage announcements={announcements||[]} go={goPub}/>}
+      {pubView==='main'&&<>
+      <div className="card pad" style={{marginBottom:16}}>
+        <div className="row-between" style={{margin:'0 0 12px'}}>
+          <div className="section-title" style={{margin:0}}><Icon name="megaphone" size={17}/>ประกาศ</div>
+          {announcements&&announcements.length>0&&<span className="link" onClick={()=>setPubView('all')}>ดูทั้งหมด →</span>}
+        </div>
+        {announcements&&announcements.length?
+          <div style={{position:'relative'}}>
+            <div className="announce-cards-row" ref={cardsRowRef} onScroll={()=>setShowHint(false)}>
+              {announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a} onView={openPubAnnounce}/>)}
+            </div>
+            {showHint&&<div className="scroll-hint-arrow"><Icon name="play" size={22}/></div>}
+          </div>
+          :<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
+      </div>
       <div className="card pad">
         <div className="row-between" style={{marginBottom:4,flexWrap:'wrap',gap:10}}>
           <div className="section-title" style={{margin:0}}>{pview==='week'?`สัปดาห์นี้ · ${thShort(wk)} – ${thShort(addDays(wk,6))}`:`วันนี้ · ${thFull(TODAY)}`}</div>
@@ -2115,6 +2145,7 @@ function PublicPreview({bookings,onWantAuth}){
           </div>
         </>}
       </div>
+      </>}
     </div>
     {showQR&&<QRModal url={url} close={()=>setShowQR(false)}/>}
   </div>);
@@ -2309,7 +2340,7 @@ function App(){
   if(!ready)return <SkeletonScreen/>;
   if(!user){
     if(wantAuth||busyLine||pendingLine) return <AuthScreen onLogin={onLogin} pendingLine={pendingLine} busyLine={busyLine}/>;
-    return <PublicPreview bookings={bookings} onWantAuth={()=>setWantAuth(true)}/>;
+    return <PublicPreview bookings={bookings} announcements={announcements} onWantAuth={()=>setWantAuth(true)}/>;
   }
 
   const ti={ok:'checkcircle',warn:'warn',err:'x'}[toastMsg?.type||'ok'];
