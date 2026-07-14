@@ -67,6 +67,12 @@ input,select,textarea{font-family:inherit}
 .sb-user-name{color:#fff;font-size:13px;font-weight:500;line-height:1.1}
 .sb-user-role{font-size:11px;color:#7E8CB0;margin-top:2px;display:flex;align-items:center;gap:4px}
 @media(max-width:880px){.sidebar{display:none}}
+.hamburger-btn{display:none}
+@media(max-width:880px){.hamburger-btn{display:flex}}
+.mobile-drawer-overlay{position:fixed;inset:0;background:rgba(8,12,22,.55);backdrop-filter:blur(2px);z-index:60;animation:fade .2s}
+.mobile-drawer{position:fixed;top:0;left:0;bottom:0;width:250px;background:linear-gradient(170deg,var(--sb-from),var(--sb-to));z-index:61;display:flex;flex-direction:column;padding:18px 14px;animation:drawerIn .22s cubic-bezier(.4,0,.2,1)}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+.drawer-close{position:absolute;top:16px;right:-46px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center}
 
 /* topbar */
 .topbar{display:flex;align-items:center;gap:14px;padding:15px 26px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
@@ -495,6 +501,7 @@ function Icon({name,size=18,sw=1.8}){
     line:<><path d="M4 8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4H9l-4 3v-3a4 4 0 0 1-1-1z"/></>,
     qrcode:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM14 20h3M20 14v3M20 20v.01M17 17h.01"/></>,
     eye:<><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></>,
+    menu:<><path d="M3 6h18M3 12h18M3 18h18"/></>,
   };
   return <svg {...p}>{M[name]||null}</svg>;
 }
@@ -613,11 +620,31 @@ function MobileNav({page,go}){
   const items=[NAV[0],NAV[1],NAV[2],NAV[3],NAV[4]];
   return(<nav className="mobilenav">{items.map(n=><button key={n.id} className={"mn-item"+(page===n.id?" active":"")} onClick={()=>go(n.id)}><Icon name={n.icon} size={21}/><span>{n.label}</span></button>)}</nav>);
 }
+function MobileDrawer({page,go,user,openProfile,close}){
+  return(<>
+    <div className="mobile-drawer-overlay" onClick={close}></div>
+    <aside className="mobile-drawer">
+      <button className="drawer-close" onClick={close}><Icon name="x" size={17}/></button>
+      <div className="brand">
+        <div className="brand-logo"><Icon name="calendar" size={20}/></div>
+        <div><div className="brand-name">MEETING ROOM</div><div className="brand-sub">BOOKING SYSTEM</div></div>
+      </div>
+      <nav className="nav">
+        {NAV.filter(n=>!n.adminOnly||user.isAdmin).map(n=><button key={n.id} className={"nav-item"+(page===n.id?" active":"")} onClick={()=>{go(n.id);close();}}><Icon name={n.icon} size={18}/><span>{n.label}</span></button>)}
+      </nav>
+      <div className="sb-user" onClick={()=>{openProfile();close();}}>
+        <div className="avatar">{user.nick[0]}</div>
+        <div><div className="sb-user-name">{user.name}</div><div className="sb-user-role">{user.dept}{user.isAdmin&&<><Icon name="shield" size={11}/>Admin</>}</div></div>
+      </div>
+    </aside>
+  </>);
+}
 
 const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
-function Topbar({page,dark,setDark,search,setSearch,user}){
+function Topbar({page,dark,setDark,search,setSearch,user,onOpenMenu}){
   return(
     <header className="topbar">
+      <button className="icon-btn hamburger-btn" onClick={onOpenMenu} title="เมนู"><Icon name="menu" size={19}/></button>
       {page==='home'?<h1>สวัสดีครับ, {user.name} <span className="wave">👋</span></h1>:<h1>{TITLES[page]}</h1>}
       {page==='home'&&<div className="search hide-mobile"><Icon name="search" size={16}/><input placeholder="ค้นหาห้องประชุม, อาคาร หรืออุปกรณ์" value={search} onChange={e=>setSearch(e.target.value)}/></div>}
       <div className="topbar-actions">
@@ -1583,6 +1610,7 @@ function App(){
   const [detail,setDetail]=useState(null);
   const [editing,setEditing]=useState(null);
   const [showProfile,setShowProfile]=useState(false);
+  const [showMobileMenu,setShowMobileMenu]=useState(false);
   const [toastMsg,setToastMsg]=useState(null);
   const [search,setSearch]=useState('');
   const [now,setNow]=useState(Date.now());
@@ -1712,7 +1740,7 @@ function App(){
     <div className="app" data-theme={dark?'dark':'light'}>
       <Sidebar page={page} go={go} user={user} openProfile={()=>setShowProfile(true)}/>
       <div className="main">
-        <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user}/>
+        <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user} onOpenMenu={()=>setShowMobileMenu(true)}/>
         <div className="scroll">
           {refreshing ? <SkeletonContent/> : <>
           {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm}/>}
@@ -1731,6 +1759,7 @@ function App(){
       {detail&&<BookingDetail b={bookings.find(x=>x.id===detail.id)||detail} close={()=>setDetail(null)} cancel={cancelBooking} checkIn={checkIn} user={user} onEdit={b=>{setDetail(null);setEditing(b);}}/>}
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
+      {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)}/>}
       {saving&&<SavingOverlay text={saving.text}/>}
       {successMsg&&<SuccessCheck msg={successMsg}/>}
       {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
