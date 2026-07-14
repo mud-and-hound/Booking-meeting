@@ -188,9 +188,9 @@ input,select,textarea{font-family:inherit}
 
 /* timeline (day) */
 .timeline{overflow-x:auto}.tl-inner{min-width:1000px}
-.tl-head{display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:4px}
+.tl-head{display:grid;grid-template-columns:172px 1fr;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:4px}
 .tl-hours{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-faint);padding:0 2px}
-.tl-row{display:grid;grid-template-columns:150px 1fr;align-items:center;min-height:60px;border-bottom:1px solid var(--border)}
+.tl-row{display:grid;grid-template-columns:172px 1fr;align-items:center;min-height:60px;border-bottom:1px solid var(--border)}
 .tl-room{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;padding-right:10px}
 .tl-room small{font-size:10.5px;color:var(--text-faint);font-weight:400}
 .tl-room-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
@@ -226,6 +226,8 @@ input,select,textarea{font-family:inherit}
 [data-theme="dark"] .bh-shade{background:rgba(96,165,250,.06)}
 .now-line{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:5;pointer-events:none}
 .now-line::before{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--surface)}
+.now-badge{position:absolute;top:-21px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.now-badge::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:3px solid transparent;border-top-color:var(--red)}
 .sheet-block{position:absolute;top:6px;height:32px;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:500;color:#fff;overflow:hidden;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow-sm);z-index:2;line-height:1.25}
 .sheet-block:hover{filter:brightness(1.08);z-index:4}.sheet-block small{font-size:8.5px;opacity:.9}
 
@@ -839,6 +841,7 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
 function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
   const [view,setView]=useState('sheet');
   const [sheetRoom,setSheetRoom]=useState((ROOMS[0]&&ROOMS[0].id)||'');
+  const [dayRoomFilter,setDayRoomFilter]=useState('all');
   const [now,setNow]=useState(Date.now());
   useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
   const nowMin=new Date(now).getHours()*60+new Date(now).getMinutes();
@@ -920,8 +923,18 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
 
       {view==='day'&&<>
         <div className="timeline"><div className="tl-inner">
-          <div className="tl-head"><div style={{fontSize:12,fontWeight:600,color:'var(--text-muted)',alignSelf:'center'}}>ห้องประชุม</div><div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div></div>
-          {ROOMS.map(r=>{
+          <div className="tl-head">
+            <div className="room-select-wrap" style={{minWidth:0,width:'100%'}}>
+              <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
+              <select className="inp room-select" style={{fontSize:12,padding:'7px 30px 7px 30px'}} value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
+                <option value="all">ทุกห้องประชุม</option>
+                {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+              <Icon name="cdown" size={13}/>
+            </div>
+            <div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div>
+          </div>
+          {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map(r=>{
             const list=bookings.filter(b=>b.room===r.id&&b.date===cursor&&b.status!=='draft');
             const gaps=freeGaps(r.id,cursor,bookings);
             return(
@@ -930,7 +943,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
                 <div className="tl-track">
                   <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
                   <div className="bh-shade" style={bhPos}></div>
-                  {cursor===TODAY&&nowPosDay&&<div className="now-line" style={{left:nowPosDay}} title={`ตอนนี้ ${String(new Date(now).getHours()).padStart(2,'0')}:${String(new Date(now).getMinutes()).padStart(2,'0')}`}></div>}
+                  {cursor===TODAY&&nowPosDay&&<div className="now-line" style={{left:nowPosDay}}><span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span></div>}
                   {gaps.map((g,i)=><div key={'g'+i} className="tl-gap" style={pos(g.s,g.e)} onClick={()=>openForm({roomId:r.id,date:cursor,s:g.s,e:g.e})} title="กดเพื่อจองช่วงนี้">+ ว่าง</div>)}
                   {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,opacity:b.status==='cancelled'?.5:1}} onClick={()=>openDetail(b)}>{b.title}<small>{b.s} · {b.by}</small></div>)}
                 </div>
@@ -1598,6 +1611,7 @@ function QRModal({url,close}){
 function PublicPreview({bookings,onWantAuth}){
   const [showQR,setShowQR]=useState(false);
   const [pview,setPview]=useState('week'); // 'week' | 'day'
+  const [dayRoomFilter,setDayRoomFilter]=useState('all');
   const [now,setNow]=useState(Date.now());
   useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
   const wk = startOfWeek(TODAY);
@@ -1645,15 +1659,25 @@ function PublicPreview({bookings,onWantAuth}){
 
         {pview==='day'&&<>
           <div className="timeline"><div className="tl-inner">
-            <div className="tl-head"><div style={{fontSize:12,fontWeight:600,color:'var(--text-muted)',alignSelf:'center'}}>ห้องประชุม</div><div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div></div>
-            {ROOMS.map(r=>{
+            <div className="tl-head">
+              <div className="room-select-wrap" style={{minWidth:0,width:'100%'}}>
+                <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
+                <select className="inp room-select" style={{fontSize:12,padding:'7px 30px 7px 30px'}} value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
+                  <option value="all">ทุกห้องประชุม</option>
+                  {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+                <Icon name="cdown" size={13}/>
+              </div>
+              <div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div>
+            </div>
+            {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map(r=>{
               const list=bookings.filter(b=>b.room===r.id&&b.date===TODAY&&ACTIVE.includes(b.status));
               return(<div className="tl-row" key={r.id}>
                 <div className="tl-room"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
                 <div className="tl-track">
                   <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
                   <div className="bh-shade" style={bhPos}></div>
-                  {nowPos&&<div className="now-line" style={{left:nowPos}}></div>}
+                  {nowPos&&<div className="now-line" style={{left:nowPos}}><span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span></div>}
                   {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,cursor:'default'}}>{b.title}<small>{b.s}-{b.e}</small></div>)}
                 </div>
               </div>);
