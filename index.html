@@ -635,6 +635,7 @@ const NAV=[
   {id:'mine',    label:'การจองของฉัน',    icon:'mine'},
   {id:'rooms',   label:'ห้องประชุม',      icon:'room'},
   {id:'holidays',label:'วันหยุดบริษัท',   icon:'flag'},
+  {id:'announce',label:'จัดการประกาศ',    icon:'megaphone', adminOnly:true},
   {id:'manage',  label:'จัดการห้อง',      icon:'settings', adminOnly:true},
   {id:'reports', label:'รายงาน',          icon:'report'},
   {id:'settings',label:'ตั้งค่า',          icon:'settings'},
@@ -682,7 +683,7 @@ function MobileDrawer({page,go,user,openProfile,close,logout}){
   </>);
 }
 
-const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
+const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',announce:'จัดการประกาศ',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
 function Topbar({page,dark,setDark,search,setSearch,user,onOpenMenu}){
   return(
     <header className="topbar">
@@ -733,7 +734,7 @@ function CheckinBar({b,now,checkIn}){
 }
 
 /* ====== DASHBOARD ====== */
-function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm}){
+function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,announcements}){
   const today=bookings.filter(b=>b.date===TODAY);
   const myToday=today.filter(b=>b.owner===user.id&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
   const q=search.trim().toLowerCase();
@@ -759,11 +760,12 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm}){
         </div>
         <div className="card pad">
           <div className="section-title" style={{margin:'0 0 12px'}}><Icon name="megaphone" size={17}/>ประกาศ</div>
-          <div className="announce">
-            <h5>แจ้งปิดปรับปรุงห้องประชุม</h5>
-            <p>ห้อง MUD 3 จะปิดปรับปรุงระบบภาพและเสียง ระหว่างวันที่ 25 - 27 มิถุนายน 2569 ขออภัยในความไม่สะดวก</p>
-            <div className="link" style={{marginTop:10}}>ดูรายละเอียด →</div>
-          </div>
+          {announcements&&announcements.length?announcements.slice(0,2).map(a=>(
+            <div className="announce" key={a.id} style={{marginBottom:announcements.length>1?10:0}}>
+              <h5>{a.pinned&&'📌 '}{a.title}</h5>
+              <p>{a.body}</p>
+            </div>
+          )):<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
         </div>
       </div>
       <div className="row-between" style={{marginBottom:13}}>
@@ -997,32 +999,59 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
 
       {view==='week'&&(()=>{
         const wk=startOfWeek(cursor);const days=[...Array(7)].map((_,i)=>addDays(wk,i));
-        return<div className="week-grid">{days.map(d=>{
-          const list=bookings.filter(b=>b.date===d&&b.status!=='draft'&&b.status!=='cancelled').sort((a,b)=>t2m(a.s)-t2m(b.s));
-          const dt=parseISO(d);
-          return(<div key={d} className={"wcol"+(d===TODAY?' today':'')}>
-            <div className="wc-head">{TH_DOW[dt.getDay()]}<b>{dt.getDate()}</b></div>
-            {list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar}} onClick={()=>openDetail(b)}>{ROOM(b.room).name}<small>{b.s}-{b.e}</small></div>):<div className="wc-empty">ว่าง</div>}
-          </div>);
-        })}</div>;
+        return<>
+          <div className="room-select-row">
+            <label className="room-select-label"><Icon name="room" size={15}/>กรองตามห้อง</label>
+            <div className="room-select-wrap">
+              <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
+              <select className="inp room-select" value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
+                <option value="all">ทุกห้องประชุม</option>
+                {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+              <Icon name="cdown" size={15}/>
+            </div>
+          </div>
+          <div className="week-grid">{days.map(d=>{
+            const list=bookings.filter(b=>b.date===d&&b.status!=='draft'&&b.status!=='cancelled'&&(dayRoomFilter==='all'||b.room===dayRoomFilter)).sort((a,b)=>t2m(a.s)-t2m(b.s));
+            const dt=parseISO(d);
+            const dHol=holidayOf(d);
+            return(<div key={d} className={"wcol"+(d===TODAY?' today':'')}>
+              <div className="wc-head">{TH_DOW[dt.getDay()]}<b>{dt.getDate()}</b></div>
+              {dHol?<div className="wc-empty" style={{color:'var(--red-tx)'}}>หยุด: {dHol.name}</div>:(list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar}} onClick={()=>openDetail(b)}>{ROOM(b.room).name}<small>{b.s}-{b.e}</small></div>):<div className="wc-empty">ว่าง</div>)}
+            </div>);
+          })}</div>
+        </>;
       })()}
 
       {view==='month'&&(()=>{
         const first=parseISO(cursor);first.setDate(1);const startISO=startOfWeek(toISO(first));
         const cells=[...Array(42)].map((_,i)=>addDays(startISO,i));const mon=parseISO(cursor).getMonth();
-        return<div>
+        return<>
+          <div className="room-select-row">
+            <label className="room-select-label"><Icon name="room" size={15}/>กรองตามห้อง</label>
+            <div className="room-select-wrap">
+              <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
+              <select className="inp room-select" value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
+                <option value="all">ทุกห้องประชุม</option>
+                {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+              <Icon name="cdown" size={15}/>
+            </div>
+          </div>
           <div className="month-grid" style={{marginBottom:6}}>{TH_DOW.map(d=><div key={d} className="mh">{d}</div>)}</div>
           <div className="month-grid">{cells.map(d=>{
             const dt=parseISO(d);const inMon=dt.getMonth()===mon;
-            const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status));
+            const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status)&&(dayRoomFilter==='all'||b.room===dayRoomFilter));
+            const dHol=holidayOf(d);
             return(<div key={d} className={"mcell"+(!inMon?' muted-cell':'')+(d===TODAY?' today':'')} onClick={()=>{setCursor(d);setView('sheet');}}>
-              <div className="mc-date">{dt.getDate()}</div>
+              <div className="mc-date" style={{display:'flex',alignItems:'center',gap:3}}>{dt.getDate()}{dHol&&<Icon name="flag" size={10}/>}</div>
               <div className="mc-dots">{list.slice(0,4).map(b=><span key={b.id} className="mc-dot" style={{background:STATUS[b.status].bar}}></span>)}</div>
               {list.length>0&&<div className="mc-count">{list.length} รายการ</div>}
+              {dHol&&<div className="mc-count" style={{color:'var(--red-tx)'}}>{dHol.name}</div>}
             </div>);
           })}</div>
           <div style={{fontSize:11.5,color:'var(--text-muted)',marginTop:10,textAlign:'center'}}>กดที่วันเพื่อดูตารางห้อง</div>
-        </div>;
+        </>;
       })()}
     </div>
   );
@@ -1337,6 +1366,8 @@ const apiSaveRoom=room=>apiWrite({action:'saveRoom',room});
 const apiDeleteRoom=roomId=>apiWrite({action:'deleteRoom',roomId});
 const apiLineLogin=code=>apiWrite({action:'lineLogin',code,redirectUri:LINE_REDIRECT_URI});
 const apiRegisterWithLine=reg=>apiWrite({action:'registerWithLine',reg}).then(d=>d.user);
+const apiSaveAnnouncement=announcement=>apiWrite({action:'saveAnnouncement',announcement});
+const apiDeleteAnnouncement=id=>apiWrite({action:'deleteAnnouncement',id});
 
 
 /* แปลงข้อมูล user จาก sheet → object ที่ UI ใช้ (เติม nick/phone ที่ UI ต้องการ) */
@@ -1693,6 +1724,142 @@ function RoomsAdmin({user,bookings,toast,reload}){
   );
 }
 
+/* ====== จัดการประกาศ (Admin เท่านั้น) ====== */
+function AnnouncementFormModal({item,onSave,onClose,saving}){
+  const isEdit=!!item.id;
+  const [title,setTitle]=useState(item.title||'');
+  const [body,setBody]=useState(item.body||'');
+  const [pinned,setPinned]=useState(item.pinned||false);
+  const handleSave=()=>{
+    if(!title.trim()||!body.trim())return;
+    onSave({id:item.id||undefined,title:title.trim(),body:body.trim(),pinned});
+  };
+  return(
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" style={{maxWidth:480}} onClick={e=>e.stopPropagation()}>
+        <div className="modal-head">
+          <Icon name={isEdit?'edit':'plus'} size={18}/>
+          {isEdit?'แก้ไขประกาศ':'เพิ่มประกาศใหม่'}
+          <button className="modal-x" style={{position:'static',marginLeft:'auto',background:'var(--surface-2)',color:'var(--text-muted)'}} onClick={onClose}><Icon name="x" size={17}/></button>
+        </div>
+        <div style={{padding:'16px 20px 22px'}}>
+          <div className="form-grid">
+            <div className="field">
+              <label>หัวข้อประกาศ<span className="req">*</span></label>
+              <input className="inp" placeholder="เช่น แจ้งปิดปรับปรุงห้องประชุม" value={title} onChange={e=>setTitle(e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>เนื้อหา<span className="req">*</span></label>
+              <textarea className="inp" rows={4} style={{resize:'vertical',fontFamily:'inherit'}} placeholder="รายละเอียดประกาศ..." value={body} onChange={e=>setBody(e.target.value)}/>
+            </div>
+            <div className="set-row" style={{padding:'8px 4px'}}>
+              <div className="set-ic"><Icon name="megaphone" size={16}/></div>
+              <div className="set-body"><div className="t">ปักหมุดไว้บนสุด</div><div className="d">แสดงก่อนประกาศอื่นเสมอ</div></div>
+              <div className={"switch"+(pinned?' on':'')} onClick={()=>setPinned(p=>!p)}></div>
+            </div>
+            <button className="btn btn-primary btn-block" disabled={!title.trim()||!body.trim()||saving} onClick={handleSave}>
+              <Icon name={saving?'clock':'check'} size={16}/>
+              {saving?'กำลังบันทึก...':(isEdit?'บันทึกการแก้ไข':'เพิ่มประกาศ')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementsAdmin({user,announcements,toast,reload}){
+  const [editItem,setEditItem]=useState(null);
+  const [delConfirm,setDelConfirm]=useState(null);
+  const [saving,setSaving]=useState(false);
+
+  if(!user.isAdmin) return(
+    <div className="card pad" style={{textAlign:'center',padding:'48px 24px'}}>
+      <Icon name="shield" size={48} sw={1.2}/>
+      <div style={{fontSize:17,fontWeight:600,margin:'16px 0 8px'}}>ไม่มีสิทธิ์เข้าถึง</div>
+      <div style={{color:'var(--text-muted)',fontSize:13}}>หน้านี้สำหรับ Admin เท่านั้น</div>
+    </div>
+  );
+
+  const handleSave=async(a)=>{
+    setSaving(true);
+    try{
+      await apiSaveAnnouncement({...a,createdBy:user.name});
+      await reload();
+      setEditItem(null);
+      toast(a.id?'แก้ไขประกาศเรียบร้อย':'เพิ่มประกาศเรียบร้อย','ok');
+    }catch(e){ toast(e.message,'err'); }
+    setSaving(false);
+  };
+  const handleDelete=async(id)=>{
+    setSaving(true);
+    try{
+      await apiDeleteAnnouncement(id);
+      await reload();
+      setDelConfirm(null);
+      toast('ลบประกาศเรียบร้อย','ok');
+    }catch(e){ toast(e.message,'err'); }
+    setSaving(false);
+  };
+
+  return(
+    <div style={{maxWidth:680}}>
+      <div className="row-between" style={{marginBottom:16}}>
+        <div style={{fontSize:13,color:'var(--text-muted)'}}>{announcements.length} ประกาศ</div>
+        <button className="btn btn-primary" onClick={()=>setEditItem({})}><Icon name="plus" size={16}/>เพิ่มประกาศใหม่</button>
+      </div>
+
+      <div className="manage-list">
+        {announcements.length===0&&<div className="card pad"><div className="empty">ยังไม่มีประกาศ กดปุ่มด้านบนเพื่อเพิ่ม</div></div>}
+        {announcements.map(a=>(
+          <div className="manage-row" key={a.id} style={{alignItems:'flex-start'}}>
+            <div className="manage-color" style={{background:a.pinned?'linear-gradient(135deg,#F59E0B,#D97706)':'linear-gradient(135deg,#64748B,#334155)',flexShrink:0}}>
+              <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff'}}><Icon name="megaphone" size={18}/></div>
+            </div>
+            <div className="manage-body">
+              <div className="manage-name">{a.pinned&&'📌 '}{a.title}</div>
+              <div className="manage-sub" style={{display:'block'}}>
+                <div style={{marginBottom:4}}>{a.body}</div>
+                <span style={{color:'var(--text-faint)'}}>{a.date} · โดย {a.createdBy||'-'}</span>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:7,flexShrink:0}}>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setEditItem({...a})}><Icon name="edit" size={14}/>แก้ไข</button>
+              <button className="btn btn-sm" style={{background:'var(--red-bg)',color:'var(--red-tx)',border:'1px solid var(--red)'}}
+                onClick={()=>setDelConfirm(a)} disabled={saving}>
+                <Icon name="trash" size={14}/>ลบ
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {editItem!==null&&(
+        <AnnouncementFormModal item={editItem} saving={saving} onSave={handleSave} onClose={()=>setEditItem(null)}/>
+      )}
+
+      {delConfirm&&(
+        <div className="overlay" onClick={()=>setDelConfirm(null)}>
+          <div className="modal" style={{maxWidth:380}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-head"><Icon name="warn" size={18} sw={2}/> ยืนยันลบประกาศ</div>
+            <div style={{padding:'14px 20px 20px'}}>
+              <div style={{fontSize:13.5,marginBottom:16,lineHeight:1.6}}>
+                ต้องการลบประกาศ <b>{delConfirm.title}</b> ใช่หรือไม่?
+              </div>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn btn-ghost btn-block" onClick={()=>setDelConfirm(null)}>ยกเลิก</button>
+                <button className="btn btn-danger btn-block" disabled={saving} onClick={()=>handleDelete(delConfirm.id)}>
+                  <Icon name="trash" size={15}/>{saving?'กำลังลบ...':'ลบประกาศนี้'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ====== APP ====== */
 /* ====== QR MODAL (แชร์ลิงก์ดูตารางห้อง) ====== */
 function QRModal({url,close}){
@@ -1820,6 +1987,7 @@ function App(){
   const [user,setUser]=useState(()=>{try{const s=safeStore.get('mrb_user');return s?shapeUser(JSON.parse(s)):null;}catch(e){return null;}});
   // API AI — state aiConfig ถอดออกชั่วคราว (ดู AI_Module.js)
   const [bookings,setBookings]=useState([]);
+  const [announcements,setAnnouncements]=useState([]);
   const [detail,setDetail]=useState(null);
   const [editing,setEditing]=useState(null);
   const [showProfile,setShowProfile]=useState(false);
@@ -1850,13 +2018,14 @@ function App(){
       setCursor(c=>c||TODAY);
       // API AI — โหลด aiKey จากชีตถอดออกชั่วคราว (ดู AI_Module.js)
       setBookings(prep(d.bookings||[]));
+      setAnnouncements(d.announcements||[]);
       setReady(true);
     }catch(e){ setBootError(e.message); }
   };
   useEffect(()=>{loadData();},[]);
 
   const reload=async()=>{
-    try{const d=await apiGetAll();ROOMS=d.rooms||[];if(d.today)TODAY=d.today;setBookings(prep(d.bookings||[]));}
+    try{const d=await apiGetAll();ROOMS=d.rooms||[];if(d.today)TODAY=d.today;setBookings(prep(d.bookings||[]));setAnnouncements(d.announcements||[]);}
     catch(e){toast('โหลดข้อมูลใหม่ไม่สำเร็จ: '+e.message,'err');}
   };
 
@@ -1956,13 +2125,14 @@ function App(){
         <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user} onOpenMenu={()=>setShowMobileMenu(true)}/>
         <div className="scroll">
           {refreshing ? <SkeletonContent/> : <>
-          {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm}/>}
+          {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm} announcements={announcements}/>}
           {page==='form'&&<BookingForm key={JSON.stringify(prefill)} bookings={bookings} addBooking={addBooking} toast={toast} user={user} go={go} prefill={prefill} clearPrefill={()=>setPrefill({})}/>}
           {/* API AI — หน้า ChatBot ถอดออกชั่วคราว (ดู AI_Module.js) */}
           {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
           {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
           {page==='holidays'&&<CompanyHolidaysPage/>}
+          {page==='announce'&&<AnnouncementsAdmin user={user} announcements={announcements} toast={toast} reload={reload}/>}
           {page==='manage'&&<RoomsAdmin user={user} bookings={bookings} toast={toast} reload={reload}/>}
           {page==='reports'&&<ReportsPage bookings={bookings}/>}
           {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} logout={logout}/>}
