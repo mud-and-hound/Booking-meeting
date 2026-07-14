@@ -66,6 +66,9 @@ input,select,textarea{font-family:inherit}
 .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#60A5FA,#2563EB);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;flex-shrink:0}
 .sb-user-name{color:#fff;font-size:13px;font-weight:500;line-height:1.1}
 .sb-user-role{font-size:11px;color:#7E8CB0;margin-top:2px;display:flex;align-items:center;gap:4px}
+.sb-logout-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:9px;margin-top:7px;border-radius:10px;background:rgba(239,68,68,.13);color:#FCA5A5;font-size:12.5px;font-weight:500;transition:.15s}
+.sb-logout-btn:hover{background:rgba(239,68,68,.22)}
+.sb-logout-btn:active{transform:scale(.97)}
 @media(max-width:880px){.sidebar{display:none}}
 .hamburger-btn{display:none}
 @media(max-width:880px){.hamburger-btn{display:flex}}
@@ -599,7 +602,7 @@ const NAV=[
   {id:'reports', label:'รายงาน',          icon:'report'},
   {id:'settings',label:'ตั้งค่า',          icon:'settings'},
 ];
-function Sidebar({page,go,user,openProfile}){
+function Sidebar({page,go,user,openProfile,logout}){
   return(
     <aside className="sidebar">
       <div className="brand">
@@ -611,8 +614,9 @@ function Sidebar({page,go,user,openProfile}){
       </nav>
       <div className="sb-user" onClick={openProfile}>
         <div className="avatar">{user.nick[0]}</div>
-        <div><div className="sb-user-name">{user.name}</div><div className="sb-user-role">{user.dept}{user.isAdmin&&<><Icon name="shield" size={11}/>Admin</>}</div></div>
+        <div><div className="sb-user-name">{user.name}</div>{(user.dept||user.isAdmin)&&<div className="sb-user-role">{user.dept}{user.isAdmin&&<><Icon name="shield" size={11}/>Admin</>}</div>}</div>
       </div>
+      <button className="sb-logout-btn" onClick={logout}><Icon name="logout" size={14}/>ออกจากระบบ</button>
     </aside>
   );
 }
@@ -620,7 +624,7 @@ function MobileNav({page,go}){
   const items=[NAV[0],NAV[1],NAV[2],NAV[3],NAV[4]];
   return(<nav className="mobilenav">{items.map(n=><button key={n.id} className={"mn-item"+(page===n.id?" active":"")} onClick={()=>go(n.id)}><Icon name={n.icon} size={21}/><span>{n.label}</span></button>)}</nav>);
 }
-function MobileDrawer({page,go,user,openProfile,close}){
+function MobileDrawer({page,go,user,openProfile,close,logout}){
   return(<>
     <div className="mobile-drawer-overlay" onClick={close}></div>
     <aside className="mobile-drawer">
@@ -634,8 +638,9 @@ function MobileDrawer({page,go,user,openProfile,close}){
       </nav>
       <div className="sb-user" onClick={()=>{openProfile();close();}}>
         <div className="avatar">{user.nick[0]}</div>
-        <div><div className="sb-user-name">{user.name}</div><div className="sb-user-role">{user.dept}{user.isAdmin&&<><Icon name="shield" size={11}/>Admin</>}</div></div>
+        <div><div className="sb-user-name">{user.name}</div>{(user.dept||user.isAdmin)&&<div className="sb-user-role">{user.dept}{user.isAdmin&&<><Icon name="shield" size={11}/>Admin</>}</div>}</div>
       </div>
+      <button className="sb-logout-btn" onClick={()=>{logout();close();}}><Icon name="logout" size={14}/>ออกจากระบบ</button>
     </aside>
   </>);
 }
@@ -1738,7 +1743,7 @@ function App(){
 
   return(
     <div className="app" data-theme={dark?'dark':'light'}>
-      <Sidebar page={page} go={go} user={user} openProfile={()=>setShowProfile(true)}/>
+      <Sidebar page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} logout={logout}/>
       <div className="main">
         <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user} onOpenMenu={()=>setShowMobileMenu(true)}/>
         <div className="scroll">
@@ -1759,7 +1764,7 @@ function App(){
       {detail&&<BookingDetail b={bookings.find(x=>x.id===detail.id)||detail} close={()=>setDetail(null)} cancel={cancelBooking} checkIn={checkIn} user={user} onEdit={b=>{setDetail(null);setEditing(b);}}/>}
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
-      {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)}/>}
+      {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)} logout={logout}/>}
       {saving&&<SavingOverlay text={saving.text}/>}
       {successMsg&&<SuccessCheck msg={successMsg}/>}
       {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
