@@ -310,21 +310,24 @@ select.inp{cursor:pointer}
 .announce-modal{max-width:740px;width:100%;overflow:hidden}
 .announce-modal-head{display:flex;align-items:center;gap:10px;padding:15px 18px;background:linear-gradient(135deg,#3B82F6,#1E40AF);color:#fff;font-weight:600;font-size:14.5px}
 .announce-modal-body{display:flex;min-height:300px;max-height:min(420px,60vh)}
-.announce-list{width:210px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto}
-.announce-list-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;border-left:3px solid transparent}
-.announce-list-item:hover{background:var(--surface-2)}
-.announce-list-item.active{background:var(--primary-soft);border-left-color:var(--primary)}
+.announce-list{width:200px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--surface-2)}
+.announce-list-item{padding:11px 13px;border:1.5px solid var(--border-strong);border-radius:10px;cursor:pointer;transition:.15s;background:var(--surface)}
+.announce-list-item:hover{border-color:var(--primary)}
+.announce-list-item.active{border-color:var(--primary);background:var(--primary-soft)}
 .announce-list-title{font-size:12.5px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .announce-list-date{font-size:10.5px;color:var(--text-faint)}
-.announce-detail{flex:1;padding:20px 22px;overflow-y:auto;min-width:0}
+.announce-detail{flex:1;padding:16px;overflow-y:auto;min-width:0;display:flex;flex-direction:column;gap:10px}
+.announce-title-box{border:1.5px solid var(--border-strong);border-radius:10px;padding:12px 15px;font-size:16px;font-weight:700;flex-shrink:0}
+.announce-body-box{border:1.5px solid var(--border-strong);border-radius:10px;padding:15px;flex:1;display:flex;flex-direction:column;min-height:150px}
+.announce-body-text{flex:1;font-size:13px;color:var(--text-muted);line-height:1.75;white-space:pre-wrap}
+.announce-body-date{align-self:flex-end;font-size:11px;color:var(--text-faint);margin-top:10px;display:flex;align-items:center;gap:5px}
 .announce-modal-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 18px;border-top:1px solid var(--border);flex-wrap:wrap}
 .announce-checkbox{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-muted);cursor:pointer}
 .announce-checkbox input{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
 @media(max-width:680px){
   .announce-modal-body{flex-direction:column;max-height:75vh}
-  .announce-list{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);flex-shrink:0}
-  .announce-list-item{flex-shrink:0;min-width:130px;border-bottom:none;border-left:none;border-right:1px solid var(--border)}
-  .announce-list-item.active{border-left:none;border-bottom:3px solid var(--primary)}
+  .announce-list{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);flex-shrink:0}
+  .announce-list-item{flex-shrink:0;min-width:120px}
 }
 .modal-x{position:absolute;top:13px;right:13px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;z-index:3}
 .modal-x:hover{background:rgba(255,255,255,.32)}
@@ -2060,9 +2063,11 @@ function AnnouncementPopup({items,onClose}){
             ))}
           </div>}
           <div className="announce-detail">
-            <div style={{fontSize:11,color:'var(--text-faint)',marginBottom:8,display:'flex',alignItems:'center',gap:5}}><Icon name="calendar" size={12}/>{item.date}</div>
-            <div style={{fontSize:17,fontWeight:700,marginBottom:12,lineHeight:1.4}}>{item.title}</div>
-            <div style={{fontSize:13,color:'var(--text-muted)',lineHeight:1.75,whiteSpace:'pre-wrap'}}>{item.body}</div>
+            <div className="announce-title-box">{item.title}</div>
+            <div className="announce-body-box">
+              <div className="announce-body-text">{item.body}</div>
+              <div className="announce-body-date"><Icon name="calendar" size={11}/>{item.date}</div>
+            </div>
           </div>
         </div>
         <div className="announce-modal-foot">
