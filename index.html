@@ -319,6 +319,8 @@ select.inp{cursor:pointer}
 .announce-card-badge{align-self:flex-start;font-size:10px;font-weight:700;color:#fff;padding:3px 10px;border-radius:20px;white-space:nowrap}
 .announce-card-title{font-size:14px;font-weight:700;line-height:1.4;color:var(--text)}
 .announce-card-date{font-size:10.5px;color:var(--text-faint);display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+.announce-card-link{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--primary);font-weight:600}
+.announce-card-link:hover{text-decoration:underline}
 @media(max-width:680px){
   .announce-card{width:180px}
 }
@@ -706,7 +708,7 @@ function MobileDrawer({page,go,user,openProfile,close,logout}){
   </>);
 }
 
-const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',announce:'จัดการประกาศ',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
+const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',announce:'จัดการประกาศ',allAnnouncements:'ประกาศทั้งหมด',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
 function Topbar({page,dark,setDark,search,setSearch,user,onOpenMenu}){
   return(
     <header className="topbar">
@@ -786,7 +788,8 @@ function AnnouncementCard({item}){
     <div className="announce-card">
       <span className="announce-card-badge" style={{background:badge.bg}}>{badge.label}</span>
       <div className="announce-card-title">{item.title}</div>
-      <ScrollingText text={item.body} maxHeight={92}/>
+      <ScrollingText text={item.body} maxHeight={item.link?70:92}/>
+      {item.link&&<a href={item.link} target="_blank" rel="noopener noreferrer" className="announce-card-link" onClick={e=>e.stopPropagation()}><Icon name="link" size={12}/>เพิ่มเติม</a>}
       <div className="announce-card-date"><Icon name="calendar" size={11}/>{item.date}</div>
     </div>
   );
@@ -817,7 +820,10 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,anno
           )):<div className="empty">วันนี้คุณยังไม่มีการจอง</div>}
         </div>
         <div className="card pad">
-          <div className="section-title" style={{margin:'0 0 12px'}}><Icon name="megaphone" size={17}/>ประกาศ</div>
+          <div className="row-between" style={{margin:'0 0 12px'}}>
+            <div className="section-title" style={{margin:0}}><Icon name="megaphone" size={17}/>ประกาศ</div>
+            {announcements&&announcements.length>0&&<span className="link" onClick={()=>go('allAnnouncements')}>ดูทั้งหมด →</span>}
+          </div>
           {announcements&&announcements.length?
             <div className="announce-cards-row">{announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a}/>)}</div>
             :<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
@@ -1153,6 +1159,30 @@ function RoomsPage({bookings,go,openForm}){
 }
 
 /* ====== วันหยุดบริษัท ====== */
+/* ====== ประกาศทั้งหมด (หน้าข่าวสารเต็ม) ====== */
+function AllAnnouncementsPage({announcements,go}){
+  return(<div style={{maxWidth:720,margin:'0 auto'}}>
+    <span className="link" onClick={()=>go('home')} style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:14}}><Icon name="cleft" size={14}/>กลับหน้าหลัก</span>
+    <div className="card pad" style={{marginBottom:16}}>
+      <div className="section-title" style={{margin:'0 0 4px'}}><Icon name="megaphone" size={17}/>ประกาศทั้งหมด</div>
+      <p style={{fontSize:12,color:'var(--text-muted)',margin:0}}>รวม {announcements.length} ประกาศ</p>
+    </div>
+    {announcements.length===0&&<div className="card pad"><div className="empty">ยังไม่มีประกาศ</div></div>}
+    {announcements.map(a=>(
+      <div className="card pad" key={a.id} style={{marginBottom:12}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:9,flexWrap:'wrap'}}>
+          {a.pinned&&<span className="badge b-amber"><span className="d"></span>📌 ปักหมุด</span>}
+          {a.featured&&<span className="badge" style={{background:'#EDE9FE',color:'#7C3AED'}}><span className="d" style={{background:'#7C3AED'}}></span>⭐ เด่น</span>}
+          <span style={{fontSize:11,color:'var(--text-faint)',marginLeft:'auto',display:'flex',alignItems:'center',gap:4}}><Icon name="calendar" size={11}/>{a.date}</span>
+        </div>
+        <div style={{fontSize:15.5,fontWeight:700,marginBottom:9}}>{a.title}</div>
+        <div style={{fontSize:13,color:'var(--text-muted)',lineHeight:1.75,whiteSpace:'pre-wrap',marginBottom:a.link?12:0}}>{a.body}</div>
+        {a.link&&<a href={a.link} target="_blank" rel="noopener noreferrer" className="chip"><Icon name="link" size={13}/>เพิ่มเติม</a>}
+      </div>
+    ))}
+  </div>);
+}
+
 function CompanyHolidaysPage(){
   const upcoming=COMPANY_HOLIDAYS.filter(h=>h.date>=TODAY);
   const past=COMPANY_HOLIDAYS.filter(h=>h.date<TODAY);
@@ -1784,13 +1814,14 @@ function AnnouncementFormModal({item,announcements,onSave,onClose,saving}){
   const isEdit=!!item.id;
   const [title,setTitle]=useState(item.title||'');
   const [body,setBody]=useState(item.body||'');
+  const [link,setLink]=useState(item.link||'');
   const [pinned,setPinned]=useState(item.pinned||false);
   const [featured,setFeatured]=useState(item.featured||false);
   const featuredCount=(announcements||[]).filter(a=>a.featured&&a.id!==item.id).length;
   const featuredFull=featuredCount>=4 && !featured;
   const handleSave=()=>{
     if(!title.trim()||!body.trim())return;
-    onSave({id:item.id||undefined,title:title.trim(),body:body.trim(),pinned,featured});
+    onSave({id:item.id||undefined,title:title.trim(),body:body.trim(),link:link.trim(),pinned,featured});
   };
   return(
     <div className="overlay" onClick={onClose}>
@@ -1809,6 +1840,10 @@ function AnnouncementFormModal({item,announcements,onSave,onClose,saving}){
             <div className="field">
               <label>เนื้อหา<span className="req">*</span></label>
               <textarea className="inp" rows={4} style={{resize:'vertical',fontFamily:'inherit'}} placeholder="รายละเอียดประกาศ..." value={body} onChange={e=>setBody(e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>ลิงก์เพิ่มเติม <span style={{color:'var(--text-faint)',fontWeight:400}}>(ไม่บังคับ)</span></label>
+              <input className="inp" placeholder="https://... สำหรับปุ่ม 'เพิ่มเติม' ในประกาศ" value={link} onChange={e=>setLink(e.target.value)}/>
             </div>
             <div className="set-row" style={{padding:'8px 4px'}}>
               <div className="set-ic"><Icon name="megaphone" size={16}/></div>
@@ -2238,6 +2273,7 @@ function App(){
           {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
           {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
+          {page==='allAnnouncements'&&<AllAnnouncementsPage announcements={announcements} go={go}/>}
           {page==='holidays'&&<CompanyHolidaysPage/>}
           {page==='announce'&&<AnnouncementsAdmin user={user} announcements={announcements} toast={toast} reload={reload}/>}
           {page==='manage'&&<RoomsAdmin user={user} bookings={bookings} toast={toast} reload={reload}/>}
