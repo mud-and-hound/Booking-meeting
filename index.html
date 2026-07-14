@@ -85,6 +85,12 @@ input,select,textarea{font-family:inherit}
 .search input{flex:1;border:none;background:none;outline:none;color:var(--text);font-size:13px}
 .search input::placeholder{color:var(--text-faint)}
 .topbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.preview-topbar h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:480px){
+  .preview-sub{display:none}
+  .preview-btn-txt{display:none}
+  .preview-btn{width:38px;height:38px;padding:0;justify-content:center;border-radius:10px}
+}
 .icon-btn{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);transition:.16s;position:relative}
 .icon-btn:hover{color:var(--primary);border-color:var(--primary)}.icon-btn:active{transform:scale(.94)}
 .badge-dot{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface)}
@@ -216,6 +222,10 @@ input,select,textarea{font-family:inherit}
 .sheet-track{position:relative}
 .sheet-grid{position:absolute;inset:0;display:grid}.sheet-grid span{border-left:1px solid var(--border)}
 .sheet-empty{position:absolute;inset:0;z-index:1;cursor:pointer}
+.bh-shade{position:absolute;top:0;bottom:0;background:rgba(37,99,235,.045);pointer-events:none;z-index:0}
+[data-theme="dark"] .bh-shade{background:rgba(96,165,250,.06)}
+.now-line{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:5;pointer-events:none}
+.now-line::before{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--surface)}
 .sheet-block{position:absolute;top:6px;height:32px;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:500;color:#fff;overflow:hidden;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow-sm);z-index:2;line-height:1.25}
 .sheet-block:hover{filter:brightness(1.08);z-index:4}.sheet-block small{font-size:8.5px;opacity:.9}
 
@@ -536,7 +546,7 @@ const EXTRAS_LIST=[
   {id:'laptop',    label:'Laptop',         icon:'laptop'},
 ];
 const ROOM=id=>ROOMS.find(r=>r.id===id)||{id:id,name:id,cap:0,eq:[],g:['#64748B','#334155']};
-const DAY_START=8*60, DAY_END=20*60;
+const DAY_START=7*60, DAY_END=20*60;
 
 let _bid=0; // ตัวนับ booking id ชั่วคราว (optimistic ก่อน reload จาก sheet)
 
@@ -829,12 +839,20 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
 function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
   const [view,setView]=useState('sheet');
   const [sheetRoom,setSheetRoom]=useState((ROOMS[0]&&ROOMS[0].id)||'');
-  const H_START=8,H_END=20,SPAN=(H_END-H_START)*60;
+  const [now,setNow]=useState(Date.now());
+  useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
+  const nowMin=new Date(now).getHours()*60+new Date(now).getMinutes();
+  const H_START=7,H_END=20,SPAN=(H_END-H_START)*60;
   const hours=[];for(let h=H_START;h<=H_END;h++)hours.push(h);
   const pos=(s,e)=>({left:(t2m(s)-H_START*60)/SPAN*100+'%',width:(t2m(e)-t2m(s))/SPAN*100+'%'});
-  // sheet: 09:00-18:00
-  const SH=9*60,SHE=18*60,SHS=SHE-SH,shCols=[9,10,11,12,13,14,15,16,17];
+  const BH_S=9*60,BH_E=18*60; // เวลาทำการปกติ 09:00-18:00 — ใช้แรเงาให้เห็นชัดในตาราง
+  const bhPos={left:(BH_S-H_START*60)/SPAN*100+'%',width:(BH_E-BH_S)/SPAN*100+'%'};
+  const nowPosDay=(nowMin>=H_START*60&&nowMin<=H_END*60)?(nowMin-H_START*60)/SPAN*100+'%':null;
+  // sheet: 07:00-20:00
+  const SH=7*60,SHE=20*60,SHS=SHE-SH,shCols=[7,8,9,10,11,12,13,14,15,16,17,18,19];
   const spos=(s,e)=>{const a=Math.max(t2m(s),SH),b=Math.min(t2m(e),SHE);if(b<=a)return null;return{left:(a-SH)/SHS*100+'%',width:(b-a)/SHS*100+'%'};};
+  const bhPosSheet={left:(BH_S-SH)/SHS*100+'%',width:(BH_E-BH_S)/SHS*100+'%'};
+  const nowPosSheet=(nowMin>=SH&&nowMin<=SHE)?(nowMin-SH)/SHS*100+'%':null;
   const HOLIDAYS=['2026-06-03']; // วันเฉลิมฯ (ตัวอย่างวันหยุด)
   const weekRows=useMemo(()=>{
     const d=parseISO(cursor),y=d.getFullYear(),m=d.getMonth(),dim=new Date(y,m+1,0).getDate();
@@ -881,6 +899,8 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
                   <div className={"sheet-day"+(d===TODAY?' today':'')}>{TH_DOW[dt.getDay()]}<small>{dt.getDate()}/{dt.getMonth()+1}</small></div>
                   <div className="sheet-track">
                     <div className="sheet-grid" style={{gridTemplateColumns:`repeat(${shCols.length},1fr)`}}>{shCols.map(h=><span key={h}></span>)}</div>
+                    <div className="bh-shade" style={bhPosSheet}></div>
+                    {d===TODAY&&nowPosSheet&&<div className="now-line" style={{left:nowPosSheet}} title={`ตอนนี้ ${String(new Date(now).getHours()).padStart(2,'0')}:${String(new Date(now).getMinutes()).padStart(2,'0')}`}></div>}
                     {!hol&&<div className="sheet-empty" onClick={()=>openForm({roomId:sheetRoom,date:d})} title="กดเพื่อจองวันนี้"></div>}
                     {!hol&&list.map(b=>{const p=spos(b.s,b.e);if(!p)return null;return<div key={b.id} className="sheet-block" style={{...p,background:STATUS[b.status].bar}} onClick={ev=>{ev.stopPropagation();openDetail(b);}} title={b.title+' · '+b.by}>{b.title}<small> {b.s}-{b.e}</small></div>;})}
                     {hol&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10.5,color:'var(--text-faint)',fontWeight:500}}>วันหยุด</div>}
@@ -893,6 +913,8 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
         <div className="legend">
           {Object.entries(STATUS).filter(([k])=>!['released','draft'].includes(k)).map(([k,v])=><span key={k}><i style={{background:v.bar}}></i>{v.label}</span>)}
           <span style={{color:'var(--text-faint)'}}>กดช่องว่าง = จอง · กดบล็อก = ดูรายละเอียด</span>
+          <span><i style={{background:'var(--red)',width:2,borderRadius:0}}></i>เวลาปัจจุบัน</span>
+          <span><i style={{background:'rgba(37,99,235,.25)'}}></i>เวลาทำการปกติ 09:00-18:00</span>
         </div>
       </>}
 
@@ -907,6 +929,8 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
                 <div className="tl-room"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
                 <div className="tl-track">
                   <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
+                  <div className="bh-shade" style={bhPos}></div>
+                  {cursor===TODAY&&nowPosDay&&<div className="now-line" style={{left:nowPosDay}} title={`ตอนนี้ ${String(new Date(now).getHours()).padStart(2,'0')}:${String(new Date(now).getMinutes()).padStart(2,'0')}`}></div>}
                   {gaps.map((g,i)=><div key={'g'+i} className="tl-gap" style={pos(g.s,g.e)} onClick={()=>openForm({roomId:r.id,date:cursor,s:g.s,e:g.e})} title="กดเพื่อจองช่วงนี้">+ ว่าง</div>)}
                   {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,opacity:b.status==='cancelled'?.5:1}} onClick={()=>openDetail(b)}>{b.title}<small>{b.s} · {b.by}</small></div>)}
                 </div>
@@ -917,6 +941,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
         <div className="legend">
           {Object.entries(STATUS).filter(([k])=>!['released','draft'].includes(k)).map(([k,v])=><span key={k}><i style={{background:v.bar}}></i>{v.label}</span>)}
           <span><i className="dash"></i>ช่วงว่าง (กดเพื่อจอง)</span>
+          <span><i style={{background:'var(--red)',width:2,borderRadius:0}}></i>เวลาปัจจุบัน</span>
         </div>
       </>}
 
@@ -1572,23 +1597,42 @@ function QRModal({url,close}){
 /* ====== PUBLIC PREVIEW (ดูตารางห้องได้โดยไม่ต้องล็อกอิน — จองต้องล็อกอินเท่านั้น) ====== */
 function PublicPreview({bookings,onWantAuth}){
   const [showQR,setShowQR]=useState(false);
+  const [pview,setPview]=useState('week'); // 'week' | 'day'
+  const [now,setNow]=useState(Date.now());
+  useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
   const wk = startOfWeek(TODAY);
   const days = [...Array(7)].map((_,i)=>addDays(wk,i));
   const url = window.location.origin + window.location.pathname;
+
+  const H_START=7,H_END=20,SPAN=(H_END-H_START)*60;
+  const hours=[];for(let h=H_START;h<=H_END;h++)hours.push(h);
+  const pos=(s,e)=>({left:(t2m(s)-H_START*60)/SPAN*100+'%',width:(t2m(e)-t2m(s))/SPAN*100+'%'});
+  const BH_S=9*60,BH_E=18*60;
+  const bhPos={left:(BH_S-H_START*60)/SPAN*100+'%',width:(BH_E-BH_S)/SPAN*100+'%'};
+  const nowMin=new Date(now).getHours()*60+new Date(now).getMinutes();
+  const nowPos=(nowMin>=H_START*60&&nowMin<=H_END*60)?(nowMin-H_START*60)/SPAN*100+'%':null;
+
   return(<div style={{minHeight:'100vh',background:'var(--bg)'}}>
-    <header className="topbar">
-      <div className="brand-logo" style={{width:34,height:34}}><Icon name="calendar" size={17}/></div>
-      <h1 style={{fontSize:15}}>ตารางห้องประชุม <span style={{fontWeight:400,color:'var(--text-muted)',fontSize:12.5}}>(ดูอย่างเดียว)</span></h1>
+    <header className="topbar preview-topbar">
+      <div className="brand-logo" style={{width:34,height:34,flexShrink:0}}><Icon name="calendar" size={17}/></div>
+      <h1 style={{fontSize:15}}>ตารางห้องประชุม <span className="preview-sub" style={{fontWeight:400,color:'var(--text-muted)',fontSize:12.5}}>(ดูอย่างเดียว)</span></h1>
       <div className="topbar-actions">
-        <button className="btn btn-ghost btn-sm" onClick={()=>setShowQR(true)}><Icon name="qrcode" size={15}/>แชร์ QR</button>
-        <button className="btn btn-primary btn-sm" onClick={onWantAuth}><Icon name="user" size={15}/>เข้าสู่ระบบเพื่อจอง</button>
+        <button className="btn btn-ghost btn-sm preview-btn" onClick={()=>setShowQR(true)}><Icon name="qrcode" size={15}/><span className="preview-btn-txt">แชร์ QR</span></button>
+        <button className="btn btn-primary btn-sm preview-btn" onClick={onWantAuth}><Icon name="user" size={15}/><span className="preview-btn-txt">เข้าสู่ระบบเพื่อจอง</span></button>
       </div>
     </header>
     <div style={{padding:'22px 26px 60px',maxWidth:1100,margin:'0 auto'}}>
       <div className="card pad">
-        <div className="section-title" style={{margin:'0 0 4px'}}>สัปดาห์นี้ · {thShort(wk)} – {thShort(addDays(wk,6))}</div>
+        <div className="row-between" style={{marginBottom:4,flexWrap:'wrap',gap:10}}>
+          <div className="section-title" style={{margin:0}}>{pview==='week'?`สัปดาห์นี้ · ${thShort(wk)} – ${thShort(addDays(wk,6))}`:`วันนี้ · ${thFull(TODAY)}`}</div>
+          <div className="seg">
+            <button className={pview==='week'?'on':''} onClick={()=>setPview('week')}>สัปดาห์</button>
+            <button className={pview==='day'?'on':''} onClick={()=>setPview('day')}>วันนี้</button>
+          </div>
+        </div>
         <p style={{fontSize:12.5,color:'var(--text-muted)',margin:'0 0 16px'}}>ต้องการจองห้องประชุม? <b style={{color:'var(--primary)',cursor:'pointer'}} onClick={onWantAuth}>เข้าสู่ระบบที่นี่</b></p>
-        <div className="week-grid">
+
+        {pview==='week'&&<div className="week-grid">
           {days.map(d=>{
             const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
             const dt=parseISO(d);
@@ -1597,7 +1641,30 @@ function PublicPreview({bookings,onWantAuth}){
               {list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar,cursor:'default'}}><b>{ROOM(b.room).name}</b><small>{b.s}-{b.e} · {b.title}</small></div>):<div className="wc-empty">ว่าง</div>}
             </div>);
           })}
-        </div>
+        </div>}
+
+        {pview==='day'&&<>
+          <div className="timeline"><div className="tl-inner">
+            <div className="tl-head"><div style={{fontSize:12,fontWeight:600,color:'var(--text-muted)',alignSelf:'center'}}>ห้องประชุม</div><div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div></div>
+            {ROOMS.map(r=>{
+              const list=bookings.filter(b=>b.room===r.id&&b.date===TODAY&&ACTIVE.includes(b.status));
+              return(<div className="tl-row" key={r.id}>
+                <div className="tl-room"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
+                <div className="tl-track">
+                  <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
+                  <div className="bh-shade" style={bhPos}></div>
+                  {nowPos&&<div className="now-line" style={{left:nowPos}}></div>}
+                  {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,cursor:'default'}}>{b.title}<small>{b.s}-{b.e}</small></div>)}
+                </div>
+              </div>);
+            })}
+          </div></div>
+          <div className="legend">
+            {Object.entries(STATUS).filter(([k])=>!['released','draft'].includes(k)).map(([k,v])=><span key={k}><i style={{background:v.bar}}></i>{v.label}</span>)}
+            <span><i style={{background:'var(--red)',width:2,borderRadius:0}}></i>เวลาปัจจุบัน</span>
+            <span><i style={{background:'rgba(37,99,235,.25)'}}></i>เวลาทำการปกติ 09:00-18:00</span>
+          </div>
+        </>}
       </div>
     </div>
     {showQR&&<QRModal url={url} close={()=>setShowQR(false)}/>}
