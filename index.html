@@ -1193,8 +1193,8 @@ function AllAnnouncementsPage({announcements,go}){
           <span style={{fontSize:11,color:'var(--text-faint)',marginLeft:'auto',display:'flex',alignItems:'center',gap:4}}><Icon name="calendar" size={11}/>{a.date}</span>
         </div>
         <div style={{fontSize:15.5,fontWeight:700,marginBottom:9}}>{a.title}</div>
-        <div style={{fontSize:13,color:'var(--text-muted)',lineHeight:1.75,whiteSpace:'pre-wrap',marginBottom:a.link?12:0}}>{a.body}</div>
-        {a.link&&<a href={a.link} target="_blank" rel="noopener noreferrer" className="chip"><Icon name="link" size={13}/>เพิ่มเติม</a>}
+        <ScrollingText text={a.body} maxHeight={100}/>
+        {a.link&&<a href={a.link} target="_blank" rel="noopener noreferrer" className="chip" style={{marginTop:12}}><Icon name="link" size={13}/>เพิ่มเติม</a>}
       </div>
     ))}
   </div>);
