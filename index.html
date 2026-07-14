@@ -412,7 +412,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyAvbbjRUHmKJxTip0vf3Z0
      Apps Script > Project Settings > Script Properties แทน — ปลอดภัยกว่า)
    - ตั้ง Callback URL ในหน้า LINE Developers Console ให้ตรงกับ URL เว็บนี้เป๊ะ
    ============================================================ */
-const LINE_CHANNEL_ID = "YOUR_LINE_LOGIN_CHANNEL_ID"; // ⬅️ แทนที่ด้วย Channel ID จริงหลังสร้างเสร็จ
+const LINE_CHANNEL_ID = "2010684176"; // Channel ID จริงจาก M&H Login (LINE Developers Console)
 const LINE_REDIRECT_URI = window.location.origin + window.location.pathname;
 function buildLineAuthUrl(){
   const state = Math.random().toString(36).slice(2);
