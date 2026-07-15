@@ -118,6 +118,9 @@ input,select,textarea{font-family:inherit}
 .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
 .btn-danger{background:var(--red);color:#fff}.btn-danger:hover{filter:brightness(1.06)}
 .btn-sm{padding:7px 13px;font-size:12px}.btn-block{width:100%}
+.btn-xs{padding:6px 12px;font-size:11.5px;gap:5px}
+.form-actions-sm{gap:7px}
+@media(max-width:520px){.btn-xs{padding:5px 10px;font-size:11px}}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
 .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
@@ -187,7 +190,8 @@ input,select,textarea{font-family:inherit}
 .send-btn:active{transform:scale(.9)}.send-btn:disabled{opacity:.5}
 
 /* calendar toolbar */
-.cal-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.cal-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;position:sticky;top:0;z-index:8;background:var(--surface);padding-top:1px}
+.cal-sticky-row{position:sticky;z-index:7;background:var(--surface)}
 .seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
 .seg button{padding:6px 15px;border-radius:8px;font-size:12.5px;color:var(--text-muted);font-weight:500;transition:.15s}
 .seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
@@ -739,7 +743,6 @@ function RoomCard({room,bookings,onBook,onView,date}){
       <RoomGfx room={room} cls="sm"/>
       <h4>{room.name}</h4>
       <div className="meta-row"><Icon name="users" size={14}/><span>{room.cap} ที่นั่ง</span></div>
-      <div className="eq-row">{room.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{eqLabel(e)}</span>)}</div>
       <div className="row-between">
         <span className={"badge "+(free?'b-green':'b-red')}><span className="d"></span>{free?'ว่าง':'ไม่ว่าง'}</span>
         {free?<button className="btn btn-primary btn-sm" onClick={()=>onBook(room)}>จองเลย</button>:<button className="btn btn-ghost btn-sm" onClick={()=>onView(room)}>ดูตาราง</button>}
@@ -877,9 +880,6 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
   const [s,setS]=useState(prefill.s||'09:00');
   const [e,setE]=useState(prefill.e||'10:00');
   const [title,setTitle]=useState('');
-  const [att,setAtt]=useState('');
-  const [extras,setExtras]=useState([]);
-  const toggleExtra=id=>setExtras(ex=>ex.includes(id)?ex.filter(x=>x!==id):[...ex,id]);
   useEffect(()=>()=>clearPrefill(),[]);
   const gaps=useMemo(()=>freeGaps(roomId,date,bookings),[roomId,date,bookings]);
   const valid=t2m(e)>t2m(s);
@@ -887,7 +887,7 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
   const submit=(status)=>{
     if(!valid){toast('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม','err');return;}
     if(status!=='draft'&&conflict){toast('ช่วงเวลานี้ชนกับการจองอื่น','err');return;}
-    addBooking({room:roomId,date,s,e,title:title||'การประชุมใหม่',att:Number(att)||ROOM(roomId).cap,owner:user.id,by:user.name,extras,status,checkedIn:false}, status==='draft'?'mine':'calendar');
+    addBooking({room:roomId,date,s,e,title:title||'การประชุมใหม่',att:ROOM(roomId).cap,owner:user.id,by:user.name,extras:[],status,checkedIn:false}, status==='draft'?'mine':'calendar');
   };
   return(
     <div className="form-wrap">
@@ -900,16 +900,13 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
             </select>
           </div>
           <div className="field">
-            <label>วันที่<span className="req">*</span></label>
-            <input className="inp" type="date" value={date} onChange={ev=>setDate(ev.target.value)}/>
-          </div>
-          <div className="field">
-            <label>ช่วงเวลา<span className="req">*</span></label>
-            <div className="time-row">
-              <div><div style={{fontSize:11,color:'var(--text-muted)',marginBottom:5}}>เริ่ม</div><input className="inp" type="time" value={s} onChange={ev=>setS(ev.target.value)}/></div>
-              <div><div style={{fontSize:11,color:'var(--text-muted)',marginBottom:5}}>สิ้นสุด</div><input className="inp" type="time" value={e} onChange={ev=>setE(ev.target.value)}/></div>
-              <div className="dur-pill"><Icon name="clock" size={14}/>&nbsp;{durText(s,e)}</div>
+            <label>วันที่ & เวลา<span className="req">*</span></label>
+            <div className="time-row" style={{gridTemplateColumns:'1fr 1fr auto'}}>
+              <input className="inp" type="date" value={date} onChange={ev=>setDate(ev.target.value)}/>
+              <input className="inp" type="time" value={s} onChange={ev=>setS(ev.target.value)}/>
+              <span style={{alignSelf:'center',color:'var(--text-faint)'}}>–</span>
             </div>
+            <input className="inp" type="time" value={e} onChange={ev=>setE(ev.target.value)} style={{marginTop:8}}/>
           </div>
           {conflict&&<div className="conflict-warn"><Icon name="warn" size={16}/><span>ช่วง {s}-{e} ของ {ROOM(roomId).name} ชนกับการจองอื่น เลือกช่วงที่ว่างด้านล่างได้เลย</span></div>}
           <div className="gap-help">
@@ -924,25 +921,10 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
             <label>ผู้จอง (อัตโนมัติจากสมาชิก)</label>
             <div className="auto-field"><div className="avatar" style={{width:30,height:30,fontSize:12}}>{user.nick[0]}</div><div><div style={{fontSize:13,fontWeight:500}}>{user.name} ({user.nick})</div><div style={{fontSize:11,color:'var(--text-muted)'}}>{user.dept}{user.phone?' · '+user.phone:''}</div></div></div>
           </div>
-          <div className="field"><label>จำนวนผู้เข้าร่วม</label><input className="inp" type="number" min="1" placeholder={ROOM(roomId).cap} value={att} onChange={ev=>setAtt(ev.target.value)}/></div>
-          <div className="field">
-            <label>อุปกรณ์เสริมที่ต้องการขอ IT</label>
-            <div style={{fontSize:11.5,color:'var(--text-muted)',marginBottom:8}}>เลือกเฉพาะอุปกรณ์ที่ไม่มีในห้องและต้องการเพิ่ม</div>
-            <div className="extras-grid">
-              {EXTRAS_LIST.map(ex=>(
-                <button key={ex.id} type="button" className={'extra-btn'+(extras.includes(ex.id)?' on':'')} onClick={()=>toggleExtra(ex.id)}>
-                  <Icon name={ex.icon} size={15}/>
-                  <span style={{flex:1}}>{ex.label}</span>
-                  <span className="ex-check"><Icon name="check" size={10}/></span>
-                </button>
-              ))}
-            </div>
-            {extras.length>0&&<div style={{marginTop:8,fontSize:12,color:'var(--amber-tx)'}}>⚡ ขอ IT: {extras.map(id=>EXTRAS_LIST.find(x=>x.id===id)?.label).join(', ')}</div>}
-          </div>
-          <div className="form-actions">
-            <button className="btn btn-primary" style={{flex:1,minWidth:140}} onClick={()=>submit('confirmed')}><Icon name="check" size={16}/>ยืนยันการจอง</button>
-            <button className="btn btn-ghost" onClick={()=>submit('draft')}><Icon name="save" size={15}/>บันทึกร่าง</button>
-            <button className="btn btn-ghost" onClick={()=>go('home')}><Icon name="x" size={15}/>ยกเลิก</button>
+          <div className="form-actions form-actions-sm">
+            <button className="btn btn-primary btn-xs" onClick={()=>submit('confirmed')}><Icon name="check" size={13}/>ยืนยัน</button>
+            <button className="btn btn-ghost btn-xs" onClick={()=>submit('draft')}><Icon name="save" size={12}/>ร่าง</button>
+            <button className="btn btn-ghost btn-xs" onClick={()=>go('home')}><Icon name="x" size={12}/>ยกเลิก</button>
           </div>
         </div>
       </div>
@@ -958,6 +940,19 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
   const [now,setNow]=useState(Date.now());
   const timelineRef=useRef(null);
   const trackRef=useRef(null);
+  const toolbarRef=useRef(null);
+  const [toolbarH,setToolbarH]=useState(52);
+  const roomRowRef=useRef(null);
+  const [roomRowH,setRoomRowH]=useState(50);
+  useEffect(()=>{
+    const measure=()=>{
+      if(toolbarRef.current) setToolbarH(toolbarRef.current.offsetHeight);
+      if(roomRowRef.current) setRoomRowH(roomRowRef.current.offsetHeight);
+    };
+    measure();
+    window.addEventListener('resize',measure);
+    return ()=>window.removeEventListener('resize',measure);
+  },[view]);
   useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
   const nowMin=new Date(now).getHours()*60+new Date(now).getMinutes();
   const H_START=7,H_END=20,SPAN=(H_END-H_START)*60;
@@ -992,7 +987,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
   const move=n=>{if(isMonthly){const d=parseISO(cursor);d.setMonth(d.getMonth()+n);d.setDate(1);setCursor(toISO(d));}else if(view==='week')setCursor(addDays(cursor,7*n));else setCursor(addDays(cursor,n));};
   return(
     <div className="card pad">
-      <div className="cal-toolbar">
+      <div className="cal-toolbar" ref={toolbarRef}>
         <button className="nav-arrow" onClick={()=>move(-1)}><Icon name="cleft" size={16}/></button>
         <button className="nav-arrow" onClick={()=>move(1)}><Icon name="cright" size={16}/></button>
         <button className="btn btn-ghost btn-sm" onClick={()=>setCursor(TODAY)}>วันนี้</button>
@@ -1001,7 +996,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
       </div>
 
       {view==='sheet'&&<>
-        <div className="room-select-row">
+        <div className="room-select-row cal-sticky-row" ref={roomRowRef} style={{top:toolbarH}}>
           <label className="room-select-label"><Icon name="room" size={15}/>เลือกห้อง</label>
           <div className="room-select-wrap">
             <span className="room-select-dot" style={{background:(ROOM(sheetRoom).g||['#64748B'])[0]}}></span>
@@ -1012,7 +1007,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
           </div>
         </div>
         <div className="sheet"><div className="sheet-inner">
-          <div className="sheet-head">
+          <div className="sheet-head" style={{top:toolbarH+roomRowH}}>
             <div style={{fontSize:11.5,fontWeight:600,color:'var(--text-muted)',display:'flex',alignItems:'center',padding:'0 9px'}}>วันที่ / เวลา</div>
             <div className="sheet-hours" style={{display:'grid',gridTemplateColumns:`repeat(${shCols.length},1fr)`}}>{shCols.map(h=><span key={h}>{String(h).padStart(2,'0')}:00</span>)}</div>
           </div>
@@ -1048,7 +1043,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
       {view==='day'&&<>
         {HOLIDAY_DATES.includes(cursor)&&<div className="holiday-banner"><Icon name="calendar" size={15}/>วันหยุดบริษัท: {holidayOf(cursor)?.name}</div>}
         <div className="timeline" ref={timelineRef}><div className="tl-inner">
-          <div className="tl-head">
+          <div className="tl-head cal-sticky-row" style={{top:toolbarH}}>
             <div className="room-select-wrap tl-sticky-col" style={{minWidth:0,width:'100%'}}>
               <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
               <select className="inp room-select" style={{fontSize:12,padding:'7px 30px 7px 30px'}} value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
@@ -1086,7 +1081,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
       {view==='week'&&(()=>{
         const wk=startOfWeek(cursor);const days=[...Array(7)].map((_,i)=>addDays(wk,i));
         return<>
-          <div className="room-select-row">
+          <div className="room-select-row cal-sticky-row" style={{top:toolbarH}}>
             <label className="room-select-label"><Icon name="room" size={15}/>กรองตามห้อง</label>
             <div className="room-select-wrap">
               <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
@@ -1113,7 +1108,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
         const first=parseISO(cursor);first.setDate(1);const startISO=startOfWeek(toISO(first));
         const cells=[...Array(42)].map((_,i)=>addDays(startISO,i));const mon=parseISO(cursor).getMonth();
         return<>
-          <div className="room-select-row">
+          <div className="room-select-row cal-sticky-row" style={{top:toolbarH}}>
             <label className="room-select-label"><Icon name="room" size={15}/>กรองตามห้อง</label>
             <div className="room-select-wrap">
               <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
@@ -1177,7 +1172,6 @@ function RoomsPage({bookings,go,openForm}){
       <RoomGfx room={r} badge={<span className={"badge "+(free?'b-green':'b-red')} style={{boxShadow:'var(--shadow-sm)'}}><span className="d"></span>{free?'ว่าง':'ไม่ว่าง'}</span>}/>
       <h4>{r.name}</h4>
       <div className="meta-row"><Icon name="users" size={14}/><span>{r.cap} ที่นั่ง</span><span style={{color:'var(--text-faint)'}}>·</span><span>ชั้น {idx%3+1}</span></div>
-      <div className="eq-row">{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={12}/>{eqLabel(e)}</span>)}</div>
       <div className="row-between"><button className="btn btn-ghost btn-sm" onClick={()=>go('calendar')}>ดูตาราง</button><button className="btn btn-primary btn-sm" onClick={()=>openForm({roomId:r.id})}>จองห้องนี้</button></div>
     </div>);
   })}</div>);
@@ -1428,8 +1422,6 @@ function BookingDetail({b,close,cancel,checkIn,user,onEdit}){
         <div className="detail-line"><Icon name="users" size={17}/><span className="dl-label">ผู้เข้าร่วม</span><b style={{fontWeight:500}}>{b.att} คน</b></div>
         <div className="detail-line"><Icon name="note" size={17}/><span className="dl-label">หัวข้อ</span><b style={{fontWeight:500}}>{b.title}</b></div>
         <div className="detail-line"><Icon name="user" size={17}/><span className="dl-label">ผู้จอง</span><b style={{fontWeight:500}}>{b.by}</b></div>
-        <div className="detail-line"><Icon name="tv" size={17}/><span className="dl-label">อุปกรณ์ห้อง</span><div style={{display:'flex',flexWrap:'wrap',gap:5}}>{r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{eqLabel(e)}</span>)}</div></div>
-        {b.extras&&b.extras.length>0&&<div className="detail-line"><Icon name="extension" size={17}/><span className="dl-label">ขอ IT เพิ่ม</span><div style={{display:'flex',flexWrap:'wrap',gap:5}}>{b.extras.map(id=>{const ex=EXTRAS_LIST.find(x=>x.id===id);return ex?<span key={id} className="eq-extra"><Icon name={ex.icon} size={11}/>{ex.label}</span>:null;})}</div></div>}
 
         {canCheck&&canManage&&<button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>{checkIn(b.id);close();}}><Icon name="checkcircle" size={17}/>เช็คอินเข้าห้องประชุม</button>}
         {b.checkedIn&&<div className="checkin-bar" style={{marginTop:14,marginBottom:0,background:'var(--green-bg)',borderColor:'var(--green)'}}><Icon name="checkcircle" size={18}/><span style={{fontSize:13,fontWeight:500,color:'var(--green-tx)'}}>เช็คอินเรียบร้อยแล้ว</span></div>}
@@ -1658,23 +1650,13 @@ function RoomFormModal({room,onSave,onClose,saving}){
   const isEdit=!!room.id;
   const [name,setName]=useState(room.name||'');
   const [cap,setCap]=useState(room.cap||10);
-  const [eq,setEq]=useState(room.eq||[]);
-  const [customEq,setCustomEq]=useState(''); // free-text เพิ่มอุปกรณ์เอง
   const [gIdx,setGIdx]=useState(()=>{
     const i=ROOM_COLORS.findIndex(c=>c[0]===(room.g&&room.g[0]));
     return i>=0?i:0;
   });
-  const togglePreset=id=>setEq(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
-  const addCustom=()=>{
-    const val=customEq.trim();
-    if(!val||eq.includes(val))return;
-    setEq(prev=>[...prev,val]);
-    setCustomEq('');
-  };
-  const removeEq=id=>setEq(prev=>prev.filter(x=>x!==id));
   const handleSave=()=>{
     if(!name.trim())return;
-    onSave({id:room.id||undefined,name:name.trim(),capacity:Number(cap)||0,equipment:eq,colorFrom:ROOM_COLORS[gIdx][0],colorTo:ROOM_COLORS[gIdx][1]});
+    onSave({id:room.id||undefined,name:name.trim(),capacity:Number(cap)||0,equipment:[],colorFrom:ROOM_COLORS[gIdx][0],colorTo:ROOM_COLORS[gIdx][1]});
   };
   return(
     <div className="overlay" onClick={onClose}>
@@ -1697,39 +1679,6 @@ function RoomFormModal({room,onSave,onClose,saving}){
             <div className="field">
               <label>จำนวนที่นั่ง (คน)<span className="req">*</span></label>
               <input className="inp" type="number" min="1" max="500" value={cap} onChange={e=>setCap(e.target.value)}/>
-            </div>
-            {/* อุปกรณ์ในห้อง — preset + free-text */}
-            <div className="field">
-              <label>อุปกรณ์ในห้อง (ติดถาวร)</label>
-              <div style={{fontSize:11.5,color:'var(--text-muted)',marginBottom:8}}>เลือก preset หรือพิมพ์เพิ่มเองได้อิสระ</div>
-              {/* Preset */}
-              <div className="eq-check-row" style={{marginBottom:10}}>
-                {EQ_PRESETS.map(o=>(
-                  <button key={o.id} type="button" className={'eq-check'+(eq.includes(o.id)?' on':'')}
-                    onClick={()=>togglePreset(o.id)}>
-                    <Icon name={o.icon} size={14}/>{o.label}
-                  </button>
-                ))}
-              </div>
-              {/* Free-text input */}
-              <div style={{display:'flex',gap:8,marginBottom:8}}>
-                <input className="inp" style={{flex:1}} placeholder="พิมพ์อุปกรณ์เพิ่ม เช่น จอ LED 85 นิ้ว" value={customEq}
-                  onChange={e=>setCustomEq(e.target.value)}
-                  onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addCustom();}}}/>
-                <button className="btn btn-ghost btn-sm" type="button" onClick={addCustom} disabled={!customEq.trim()}><Icon name="plus" size={14}/>เพิ่ม</button>
-              </div>
-              {/* แสดงรายการที่เลือกแล้ว */}
-              {eq.length>0&&(
-                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                  {eq.map(id=>(
-                    <span key={id} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,padding:'3px 8px 3px 10px',borderRadius:20,background:'var(--primary-soft)',border:'1px solid var(--primary)',color:'var(--primary)'}}>
-                      {EQ_PRESETS.find(p=>p.id===id)?<Icon name={EQ_PRESETS.find(p=>p.id===id).icon} size={12}/>:null}
-                      {eqLabel(id)}
-                      <button type="button" style={{display:'flex',padding:0,color:'var(--primary)',opacity:.7}} onClick={()=>removeEq(id)}><Icon name="x" size={12}/></button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
             {/* สีห้อง */}
             <div className="field">
@@ -1804,7 +1753,6 @@ function RoomsAdmin({user,bookings,toast,reload}){
                 <div className="manage-name">{r.name}</div>
                 <div className="manage-sub">
                   <span><Icon name="users" size={12}/> {r.cap} ที่นั่ง</span>
-                  {r.eq.map(e=><span key={e} className="eq"><Icon name={e} size={11}/>{eqLabel(e)}</span>)}
                   {activeCount>0&&<span style={{color:'var(--amber-tx)',fontSize:11}}>📅 {activeCount} การจอง active</span>}
                 </div>
               </div>
