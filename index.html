@@ -198,24 +198,32 @@ input,select,textarea{font-family:inherit}
 .nav-arrow{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
 .nav-arrow:hover{color:var(--primary);border-color:var(--primary)}
 
-/* timeline (day) */
+/* timeline (day) — การ์ดพับได้ + แถบสี + สถานะ + auto-scroll แยกต่อห้อง */
 .timeline{overflow-x:auto}.tl-inner{min-width:1000px}
-.tl-inner2{min-width:900px}
-.day-hour-ruler{display:flex;font-size:10.5px;color:var(--text-muted);font-weight:600;padding:7px 2px;border-bottom:1.5px solid var(--border-strong);font-variant-numeric:tabular-nums;margin-bottom:14px}
-.day-hour-ruler span{flex:1;text-align:left}
-.day-room-block{margin-bottom:24px;padding-bottom:20px;border-bottom:1.5px dashed var(--border)}
-.day-room-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-.day-room-title{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;margin-bottom:10px;color:var(--text)}
-.day-room-title small{font-weight:400;color:var(--text-faint);font-size:11px}
-.day-bar-track{position:relative;height:24px;border-radius:5px;background-image:repeating-linear-gradient(to right,var(--border) 0,var(--border) 1px,transparent 1px,transparent calc(100%/13));background-color:var(--surface-2)}
-.day-fill-seg{position:absolute;top:0;bottom:0;border-radius:5px;cursor:pointer;transition:.15s;box-shadow:var(--shadow-sm)}
-.day-fill-seg:hover{filter:brightness(1.08)}
-.day-gap-seg{position:absolute;top:2px;bottom:2px;border-radius:4px;border:1.5px dashed var(--green);background:var(--green-bg);cursor:pointer;opacity:.7;transition:.15s}
+.day-card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow-sm);margin-bottom:11px;overflow:hidden;position:relative}
+.day-card-accent{position:absolute;left:0;top:0;bottom:0;width:4px}
+.day-chead{display:flex;align-items:center;gap:9px;padding:14px 16px 14px 19px;cursor:pointer}
+.day-cname{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.day-cname small{color:var(--text-faint);font-weight:400;font-size:11px;margin-left:6px}
+.day-status{font-size:10.5px;padding:3px 10px;border-radius:20px;font-weight:600;flex-shrink:0}
+.day-caret{display:flex;color:var(--text-faint);transition:.2s;flex-shrink:0}
+.day-caret.closed{transform:rotate(-90deg)}
+.day-cbody{max-height:220px;overflow:hidden;transition:max-height .25s ease}
+.day-cbody.closed{max-height:0}
+.day-cbody-in{padding:0 16px 16px 19px}
+.day-hscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.day-hinner{min-width:820px;position:relative}
+.day-ruler{display:flex;font-size:10px;color:var(--text-muted);margin-bottom:6px;font-variant-numeric:tabular-nums}
+.day-ruler span{flex:1}
+.day-bartrack{position:relative;height:24px;background:var(--surface-2);border-radius:10px}
+.day-seg{position:absolute;top:0;bottom:0;border-radius:10px;cursor:pointer;transition:.15s;box-shadow:var(--shadow-sm)}
+.day-seg:hover{filter:brightness(1.08)}
+.day-gap-seg{position:absolute;top:2px;bottom:2px;border-radius:8px;border:1.5px dashed var(--green);background:var(--green-bg);cursor:pointer;opacity:.7;transition:.15s}
 .day-gap-seg:hover{opacity:1}
-.day-label-row{position:relative;height:36px;margin-top:6px}
-.day-label{position:absolute;top:0;text-align:center;font-size:10.5px;line-height:1.4;cursor:pointer;padding:0 3px;min-width:40px}
-.day-label b{display:block;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.day-label small{color:var(--text-muted);font-size:9.5px;white-space:nowrap}
+.day-blabels{position:relative;height:34px;margin-top:6px}
+.day-blabel{position:absolute;top:0;text-align:center;font-size:10.5px;line-height:1.4;cursor:pointer;padding:0 3px;min-width:44px}
+.day-blabel b{display:block;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-blabel small{color:var(--text-muted);font-size:9.5px;white-space:nowrap}
 .tl-head{display:grid;grid-template-columns:172px 1fr;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:4px}
 .tl-hours{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-faint);padding:0 2px}
 .tl-row{display:grid;grid-template-columns:172px 1fr;align-items:center;min-height:60px;border-bottom:1px solid var(--border)}
@@ -916,6 +924,10 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
   const [sheetRoom,setSheetRoom]=useState((ROOMS[0]&&ROOMS[0].id)||'');
   const [dayRoomFilter,setDayRoomFilter]=useState('all');
   const [now,setNow]=useState(Date.now());
+  const [openCards,setOpenCards]=useState({}); // เก็บสถานะพับ/เปิดแต่ละห้อง (ไม่มี key = เปิด/default)
+  const dayContainerRef=useRef(null); // ครอบทุกห้อง เพื่อ auto-scroll แต่ละแถบไปเวลาปัจจุบัน
+  const toggleCard=id=>setOpenCards(prev=>({...prev,[id]:prev[id]===false?true:false}));
+  const isCardOpen=id=>openCards[id]!==false;
   const timelineRef=useRef(null);
   const trackRef=useRef(null);
   const toolbarRef=useRef(null);
@@ -940,14 +952,19 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
   const bhPos={left:(BH_S-H_START*60)/SPAN*100+'%',width:(BH_E-BH_S)/SPAN*100+'%'};
   const nowPosDay=(nowMin>=H_START*60&&nowMin<=H_END*60)?(nowMin-H_START*60)/SPAN*100+'%':null;
   const nowFracDay=(nowMin-H_START*60)/SPAN;
-  // เลื่อนตารางไปยังตำแหน่งเวลาปัจจุบันอัตโนมัติ ไม่ต้องเลื่อนดูเอง (เฉพาะวันนี้ + มุมมองวัน)
+  // เลื่อนแต่ละแถบเวลาไปยังตำแหน่งเวลาปัจจุบันอัตโนมัติ ไม่ต้องเลื่อนดูเอง (เฉพาะวันนี้ + มุมมองวัน) — ทำทุกห้องที่เปิดอยู่
   useEffect(()=>{
-    if(view==='day'&&cursor===TODAY&&timelineRef.current&&trackRef.current){
-      const trackWidth=trackRef.current.offsetWidth;
-      const target=Math.max(0,nowFracDay*trackWidth-80);
-      timelineRef.current.scrollLeft=target;
+    if(view==='day'&&cursor===TODAY&&dayContainerRef.current){
+      const scrollers=dayContainerRef.current.querySelectorAll('.day-hscroll');
+      scrollers.forEach(el=>{
+        const inner=el.querySelector('.day-hinner');
+        if(!inner)return;
+        const w=inner.offsetWidth;
+        const target=Math.max(0,nowFracDay*w-90);
+        el.scrollLeft=target;
+      });
     }
-  },[view,cursor]);
+  },[view,cursor,openCards]);
   // sheet: 07:00-20:00
   const SH=7*60,SHE=20*60,SHS=SHE-SH,shCols=[7,8,9,10,11,12,13,14,15,16,17,18,19];
   const spos=(s,e)=>{const a=Math.max(t2m(s),SH),b=Math.min(t2m(e),SHE);if(b<=a)return null;return{left:(a-SH)/SHS*100+'%',width:(b-a)/SHS*100+'%'};};
@@ -1031,29 +1048,41 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
             <Icon name="cdown" size={15}/>
           </div>
         </div>
-        <div className="timeline" ref={timelineRef}><div className="tl-inner2">
-          <div className="day-hour-ruler cal-sticky-row" style={{top:toolbarH+roomRowH}}>
-            {hours.map(h=><span key={h}>{String(h).padStart(2,'0')}:00</span>)}
-          </div>
-          {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map((r,idx)=>{
+        <div ref={dayContainerRef}>
+          {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map(r=>{
             const list=bookings.filter(b=>b.room===r.id&&b.date===cursor&&b.status!=='draft');
             const gaps=freeGaps(r.id,cursor,bookings);
+            const open=isCardOpen(r.id);
+            const activeNow=cursor===TODAY&&list.find(b=>ACTIVE.includes(b.status)&&t2m(b.s)<=nowMin&&t2m(b.e)>=nowMin);
+            const statusChip=cursor===TODAY?(activeNow?{label:'ใช้งานอยู่',bg:'var(--red-bg)',tx:'var(--red-tx)'}:{label:'ว่าง',bg:'var(--green-bg)',tx:'var(--green-tx)'}):null;
             return(
-              <div className="day-room-block" key={r.id}>
-                <div className="day-room-title">📌 {r.name} <small>{r.cap} ที่นั่ง</small></div>
-                <div className="day-bar-track" ref={idx===0?trackRef:null}>
-                  <div className="bh-shade" style={bhPos}></div>
-                  {cursor===TODAY&&nowPosDay&&<div className="now-line" style={{left:nowPosDay}}>{idx===0&&<span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span>}</div>}
-                  {gaps.map((g,i)=><div key={'g'+i} className="day-gap-seg" style={pos(g.s,g.e)} onClick={()=>openForm({roomId:r.id,date:cursor,s:g.s,e:g.e})} title="กดเพื่อจองช่วงนี้"></div>)}
-                  {list.map(b=><div key={b.id} className="day-fill-seg" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,opacity:b.status==='cancelled'?.5:1}} onClick={()=>openDetail(b)}></div>)}
+              <div className="day-card" key={r.id}>
+                <div className="day-card-accent" style={{background:r.g[0]}}></div>
+                <div className="day-chead" onClick={()=>toggleCard(r.id)}>
+                  <span className="day-cname">{r.name}<small>{r.cap} ที่นั่ง</small></span>
+                  {statusChip&&<span className="day-status" style={{background:statusChip.bg,color:statusChip.tx}}>{statusChip.label}</span>}
+                  <span className={"day-caret"+(open?'':' closed')}><Icon name="cdown" size={15}/></span>
                 </div>
-                <div className="day-label-row">
-                  {list.map(b=><div key={b.id} className="day-label" style={pos(b.s,b.e)} onClick={()=>openDetail(b)}><b>{b.title}</b><small>{b.s} - {b.e}</small></div>)}
+                <div className={"day-cbody"+(open?'':' closed')}>
+                  <div className="day-cbody-in">
+                    <div className="day-hscroll"><div className="day-hinner">
+                      <div className="day-ruler">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}:00</span>)}</div>
+                      <div className="day-bartrack">
+                        <div className="bh-shade" style={bhPos}></div>
+                        {cursor===TODAY&&nowPosDay&&<div className="now-line" style={{left:nowPosDay}}><span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span></div>}
+                        {gaps.map((g,i)=><div key={'g'+i} className="day-gap-seg" style={pos(g.s,g.e)} onClick={()=>openForm({roomId:r.id,date:cursor,s:g.s,e:g.e})} title="กดเพื่อจองช่วงนี้"></div>)}
+                        {list.map(b=><div key={b.id} className="day-seg" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,opacity:b.status==='cancelled'?.5:1}} onClick={()=>openDetail(b)}></div>)}
+                      </div>
+                      <div className="day-blabels">
+                        {list.map(b=><div key={b.id} className="day-blabel" style={pos(b.s,b.e)} onClick={()=>openDetail(b)}><b>{b.title}</b><small>{b.s}-{b.e}</small></div>)}
+                      </div>
+                    </div></div>
+                  </div>
                 </div>
               </div>
             );
           })}
-        </div></div>
+        </div>
         <div className="legend">
           {Object.entries(STATUS).filter(([k])=>!['released','draft'].includes(k)).map(([k,v])=><span key={k}><i style={{background:v.bar}}></i>{v.label}</span>)}
           <span><i className="dash"></i>ช่วงว่าง (กดเพื่อจอง)</span>
