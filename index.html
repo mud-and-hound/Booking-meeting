@@ -155,17 +155,6 @@ input,select,textarea{font-family:inherit}
 .li-time small{display:block;font-size:10.5px;color:var(--text-faint);font-weight:400}
 .li-body{flex:1;min-width:0}.li-title{font-size:13.5px;font-weight:500}.li-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px}
 
-.announce{background:var(--info-bg);border:1px solid var(--border);border-radius:11px;padding:14px}
-.scroll-text-outer{overflow:hidden;position:relative}
-.scroll-text-outer p,.scroll-text-inner{font-size:12px;color:var(--text-muted);line-height:1.6}
-.scroll-text-inner.bounce{animation-name:bounce-scroll;animation-timing-function:ease-in-out;animation-iteration-count:infinite}
-@keyframes bounce-scroll{
-  0%,8%{transform:translateY(0)}
-  46%,54%{transform:translateY(var(--scroll-dist))}
-  92%,100%{transform:translateY(0)}
-}
-.announce h5{font-size:13px;font-weight:600;margin-bottom:6px}.announce p{font-size:12px;color:var(--text-muted);line-height:1.6}
-
 /* chat */
 .chat-wrap{max-width:660px;margin:0 auto;height:100%;display:flex;flex-direction:column}
 .chat-head{display:flex;align-items:center;gap:11px;padding:14px 4px;border-bottom:1px solid var(--border);margin-bottom:6px}
@@ -335,27 +324,6 @@ select.inp{cursor:pointer}
 .modal{background:var(--surface);border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:pop .22s}
 @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 .modal-gfx{height:155px;position:relative;display:flex;align-items:center;justify-content:center}
-.announce-modal{max-width:800px;width:100%;overflow:hidden}
-.announce-modal-head{display:flex;align-items:center;gap:10px;padding:15px 18px;background:linear-gradient(135deg,#3B82F6,#1E40AF);color:#fff;font-weight:600;font-size:14.5px}
-.announce-modal-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 18px;border-top:1px solid var(--border);flex-wrap:wrap}
-.announce-checkbox{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-muted);cursor:pointer}
-.announce-checkbox input{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
-/* การ์ดประกาศสไตล์ carousel (ข้อความล้วน) */
-.announce-cards-row{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 10px}
-.scroll-hint-arrow{position:absolute;right:14px;top:0;bottom:10px;margin:auto 0;width:54px;height:54px;border-radius:50%;background:rgba(17,24,39,.85);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.35);pointer-events:none;animation:hintNudge 1.1s ease-in-out infinite;z-index:2}
-.scroll-hint-arrow::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(17,24,39,.85);animation:hintRing 1.6s ease-out infinite}
-@keyframes hintRing{0%{transform:scale(.85);opacity:.8}100%{transform:scale(1.35);opacity:0}}
-@keyframes hintNudge{0%,100%{transform:translateX(0);opacity:1}50%{transform:translateX(7px);opacity:.55}}
-.announce-card{flex-shrink:0;width:210px;border:1.5px solid var(--border-strong);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--surface);transition:.15s;cursor:pointer}
-.announce-card:hover{border-color:var(--primary);box-shadow:var(--shadow);transform:translateY(-2px)}
-.announce-card-badge{align-self:flex-start;font-size:10px;font-weight:700;color:#fff;padding:3px 10px;border-radius:20px;white-space:nowrap}
-.announce-card-title{font-size:14px;font-weight:700;line-height:1.4;color:var(--text)}
-.announce-card-preview{font-size:12px;color:var(--text-muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:20px}
-.announce-card-more{font-size:11.5px;color:var(--primary);font-weight:600}
-.announce-card-date{font-size:10.5px;color:var(--text-faint);display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
-@media(max-width:680px){
-  .announce-card{width:180px}
-}
 .modal-x{position:absolute;top:13px;right:13px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;z-index:3}
 .modal-x:hover{background:rgba(255,255,255,.32)}
 .detail-line{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
@@ -422,10 +390,7 @@ select.inp{cursor:pointer}
 .auth-switch b{color:var(--primary);cursor:pointer;font-weight:600}.auth-switch b:hover{text-decoration:underline}
 .auth-err{background:var(--red-bg);border:1px solid var(--red);color:var(--red-tx);border-radius:10px;padding:10px 13px;font-size:12.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .auth-hint{background:var(--info-bg);border:1px solid var(--info);color:var(--info-tx);border-radius:10px;padding:10px 13px;font-size:12px;margin-top:18px;line-height:1.6}
-.line-login-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;border-radius:10px;font-size:14px;font-weight:600;background:#06C755;color:#fff;box-shadow:0 6px 18px rgba(6,199,85,.32);transition:.16s;margin-top:4px}
-.line-login-btn:hover{background:#04A648}.line-login-btn:active{transform:scale(.97)}
-.auth-divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--text-faint);font-size:11.5px}
-.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
 .preview-banner{display:flex;align-items:center;gap:12px;background:var(--info-bg);border-bottom:1px solid var(--info);padding:11px 20px;flex-wrap:wrap}
 .preview-banner .txt{font-size:12.5px;color:var(--info-tx);flex:1;display:flex;align-items:center;gap:7px}
 .qr-box{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px}
@@ -486,36 +451,6 @@ const {useState,useEffect,useRef,useMemo}=React;
    - คีย์ AI ไม่ฝังในไฟล์แล้ว → ดึงจากชีต _AIKeys (ปลอด GitHub secret scanning)
    ============================================================ */
 const API_URL = "https://script.google.com/macros/s/AKfycbyAvbbjRUHmKJxTip0vf3Z06Nufab7xkyuF9Z7zYV0zgVbXtjUvI-xIGZdqYQJfj0aUtw/exec";
-
-/* ============================================================
-   🔑 ตั้งค่า LINE Login
-   - ไปสร้าง "LINE Login Channel" ที่ https://developers.line.biz/console/
-     (คนละส่วนกับ LINE OA แต่ผูก Provider เดียวกันได้ — ดูวิธีทำในคำแนะนำที่ให้ไว้)
-   - เอา Channel ID มาใส่ด้านล่างนี้ (Channel Secret ห้ามใส่ที่นี่ ให้ไปตั้งใน
-     Apps Script > Project Settings > Script Properties แทน — ปลอดภัยกว่า)
-   - ตั้ง Callback URL ในหน้า LINE Developers Console ให้ตรงกับ URL เว็บนี้เป๊ะ
-   ============================================================ */
-const LINE_CHANNEL_ID = "2010684176"; // Channel ID จริงจาก M&H Login (LINE Developers Console)
-const LINE_REDIRECT_URI = window.location.origin + window.location.pathname;
-function buildLineAuthUrl(){
-  const state = Math.random().toString(36).slice(2);
-  safeStore.set('line_oauth_state', state);
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: LINE_CHANNEL_ID,
-    redirect_uri: LINE_REDIRECT_URI,
-    state,
-    scope: 'profile openid',
-  });
-  return 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
-}
-
-// โดเมนอีเมลบริษัทที่อนุญาต (ต้องตรงกับฝั่ง Apps Script — เช็คซ้ำสองชั้นกันข้าม)
-const ALLOWED_EMAIL_DOMAINS = ['subsrithai.co.th','mudandhound.co.th','greyhound.co.th','goldendonuts.co.th','abpcafe.co.th'];
-function isAllowedEmail(email){
-  const m = String(email||'').toLowerCase().match(/@([a-z0-9.-]+)$/);
-  return !!m && ALLOWED_EMAIL_DOMAINS.includes(m[1]);
-}
 
 /* เก็บ session login ในเบราว์เซอร์ (ห่อ try-catch กัน error เวลาพรีวิว/sandbox) */
 const _mem = {};
@@ -696,7 +631,6 @@ const NAV=[
   {id:'mine',    label:'การจองของฉัน',    icon:'mine'},
   {id:'rooms',   label:'ห้องประชุม',      icon:'room'},
   {id:'holidays',label:'วันหยุดบริษัท',   icon:'flag'},
-  {id:'announce',label:'จัดการประกาศ',    icon:'megaphone', adminOnly:true},
   {id:'manage',  label:'จัดการห้อง',      icon:'settings', adminOnly:true},
   {id:'reports', label:'รายงาน',          icon:'report'},
   {id:'settings',label:'ตั้งค่า',          icon:'settings'},
@@ -744,7 +678,7 @@ function MobileDrawer({page,go,user,openProfile,close,logout}){
   </>);
 }
 
-const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',announce:'จัดการประกาศ',allAnnouncements:'ประกาศทั้งหมด',announcementDetail:'รายละเอียดประกาศ',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
+const TITLES={home:'',form:'จองห้องประชุม',calendar:'ปฏิทินห้องประชุม',mine:'การจองของฉัน',rooms:'ห้องประชุม',holidays:'วันหยุดบริษัท',manage:'จัดการห้องประชุม',reports:'รายงาน',settings:'ตั้งค่า'};
 function Topbar({page,dark,setDark,search,setSearch,user,onOpenMenu}){
   return(
     <header className="topbar">
@@ -794,42 +728,8 @@ function CheckinBar({b,now,checkIn}){
 
 /* ====== DASHBOARD ====== */
 /* ====== ข้อความเลื่อนขึ้น-ลงอัตโนมัติ (ใช้กับพื้นที่จำกัด เช่น การ์ดประกาศหน้าแรก) ====== */
-function ScrollingText({text,maxHeight=52}){
-  const outerRef=useRef(null);
-  const innerRef=useRef(null);
-  const [overflow,setOverflow]=useState(0);
-  useEffect(()=>{
-    if(outerRef.current&&innerRef.current){
-      const diff=innerRef.current.scrollHeight-outerRef.current.clientHeight;
-      setOverflow(diff>4?diff:0);
-    }
-  },[text]);
-  const duration=Math.max(6,Math.min(16,overflow/10+6)); // ยาวขึ้นตามความยาวที่ล้น
-  return(
-    <div ref={outerRef} className="scroll-text-outer" style={{maxHeight}}>
-      <div ref={innerRef} className={overflow>0?'scroll-text-inner bounce':'scroll-text-inner'}
-        style={overflow>0?{'--scroll-dist':`-${overflow}px`,animationDuration:`${duration}s`}:{}}>
-        {text}
-      </div>
-    </div>
-  );
-}
 
-/* ====== การ์ดประกาศสี่เหลี่ยม (สไตล์ LINE OA carousel — ข้อความล้วน ไม่มีรูป) ====== */
-function AnnouncementCard({item,onView}){
-  const badge = item.pinned?{label:'📌 ปักหมุด',bg:'#F59E0B'}:item.featured?{label:'⭐ เด่น',bg:'#8B5CF6'}:{label:'ประกาศ',bg:'#2563EB'};
-  return(
-    <div className="announce-card" onClick={()=>onView&&onView(item)}>
-      <span className="announce-card-badge" style={{background:badge.bg}}>{badge.label}</span>
-      <div className="announce-card-title">{item.title}</div>
-      <div className="announce-card-preview">{item.body}</div>
-      <div className="announce-card-more">ดูรายละเอียด →</div>
-      <div className="announce-card-date"><Icon name="calendar" size={11}/>{item.date}</div>
-    </div>
-  );
-}
-
-function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,announcements,onViewAnnounce}){
+function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm}){
   const today=bookings.filter(b=>b.date===TODAY);
   const myToday=today.filter(b=>b.owner===user.id&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
   const activeCheckin=bookings.find(b=>b.status==='in-use'&&!b.checkedIn&&b.autoRelease);
@@ -1192,45 +1092,6 @@ function RoomsPage({bookings,go,openForm}){
 /* ====== วันหยุดบริษัท ====== */
 /* ====== ประกาศทั้งหมด (หน้าข่าวสารเต็ม) ====== */
 /* ====== หน้ารายละเอียดประกาศเดี่ยว (กดจากการ์ดแล้วเด้งมาที่นี่) ====== */
-function AnnouncementDetailPage({item,go}){
-  if(!item) return(<div className="card pad"><div className="empty">ไม่พบประกาศนี้ อาจถูกลบไปแล้ว</div></div>);
-  return(<div style={{maxWidth:640,margin:'0 auto'}}>
-    <span className="link" onClick={()=>go('home')} style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:14}}><Icon name="cleft" size={14}/>กลับหน้าหลัก</span>
-    <div className="card pad">
-      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,flexWrap:'wrap'}}>
-        {item.pinned&&<span className="badge b-amber"><span className="d"></span>📌 ปักหมุด</span>}
-        {item.featured&&<span className="badge" style={{background:'#EDE9FE',color:'#7C3AED'}}><span className="d" style={{background:'#7C3AED'}}></span>⭐ เด่น</span>}
-        <span style={{fontSize:11,color:'var(--text-faint)',marginLeft:'auto',display:'flex',alignItems:'center',gap:4}}><Icon name="calendar" size={11}/>{item.date}</span>
-      </div>
-      <div style={{fontSize:20,fontWeight:700,marginBottom:16,lineHeight:1.4}}>{item.title}</div>
-      <div style={{fontSize:14,color:'var(--text-muted)',lineHeight:1.85,whiteSpace:'pre-wrap',marginBottom:item.link?20:0}}>{item.body}</div>
-      {item.link&&<a href={item.link} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm"><Icon name="link" size={14}/>เพิ่มเติม</a>}
-    </div>
-  </div>);
-}
-
-function AllAnnouncementsPage({announcements,go}){
-  return(<div style={{maxWidth:720,margin:'0 auto'}}>
-    <span className="link" onClick={()=>go('home')} style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:14}}><Icon name="cleft" size={14}/>กลับหน้าหลัก</span>
-    <div className="card pad" style={{marginBottom:16}}>
-      <div className="section-title" style={{margin:'0 0 4px'}}><Icon name="megaphone" size={17}/>ประกาศทั้งหมด</div>
-      <p style={{fontSize:12,color:'var(--text-muted)',margin:0}}>รวม {announcements.length} ประกาศ</p>
-    </div>
-    {announcements.length===0&&<div className="card pad"><div className="empty">ยังไม่มีประกาศ</div></div>}
-    {announcements.map(a=>(
-      <div className="card pad" key={a.id} style={{marginBottom:12}}>
-        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:9,flexWrap:'wrap'}}>
-          {a.pinned&&<span className="badge b-amber"><span className="d"></span>📌 ปักหมุด</span>}
-          {a.featured&&<span className="badge" style={{background:'#EDE9FE',color:'#7C3AED'}}><span className="d" style={{background:'#7C3AED'}}></span>⭐ เด่น</span>}
-          <span style={{fontSize:11,color:'var(--text-faint)',marginLeft:'auto',display:'flex',alignItems:'center',gap:4}}><Icon name="calendar" size={11}/>{a.date}</span>
-        </div>
-        <div style={{fontSize:15.5,fontWeight:700,marginBottom:9}}>{a.title}</div>
-        <ScrollingText text={a.body} maxHeight={100}/>
-        {a.link&&<a href={a.link} target="_blank" rel="noopener noreferrer" className="chip" style={{marginTop:12}}><Icon name="link" size={13}/>เพิ่มเติม</a>}
-      </div>
-    ))}
-  </div>);
-}
 
 function CompanyHolidaysPage(){
   const upcoming=COMPANY_HOLIDAYS.filter(h=>h.date>=TODAY);
@@ -1496,10 +1357,6 @@ async function apiWrite(payload){
 }
 const apiSaveRoom=room=>apiWrite({action:'saveRoom',room});
 const apiDeleteRoom=roomId=>apiWrite({action:'deleteRoom',roomId});
-const apiLineLogin=code=>apiWrite({action:'lineLogin',code,redirectUri:LINE_REDIRECT_URI});
-const apiRegisterWithLine=reg=>apiWrite({action:'registerWithLine',reg}).then(d=>d.user);
-const apiSaveAnnouncement=announcement=>apiWrite({action:'saveAnnouncement',announcement});
-const apiDeleteAnnouncement=id=>apiWrite({action:'deleteAnnouncement',id});
 
 
 /* แปลงข้อมูล user จาก sheet → object ที่ UI ใช้ (เติม nick/phone ที่ UI ต้องการ) */
@@ -1566,19 +1423,14 @@ function SuccessCheck({msg}){
 }
 
 /* ====== LOGIN / REGISTER ====== */
-function AuthScreen({onLogin, pendingLine, busyLine}){
-  const [mode,setMode]=useState(pendingLine?'lineRegister':'login');
+function AuthScreen({onLogin}){
+  const [mode,setMode]=useState('login');
   const [userId,setUserId]=useState('');
   const [pwd,setPwd]=useState('');
-  const [name,setName]=useState(pendingLine?.displayName||'');
+  const [name,setName]=useState('');
   const [dept,setDept]=useState('');
-  const [email,setEmail]=useState('');
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState('');
-
-  useEffect(()=>{
-    if(pendingLine){ setMode('lineRegister'); setName(pendingLine.displayName||''); }
-  },[pendingLine]);
 
   const doLogin=async()=>{
     if(!userId||!pwd){setErr('กรอก User ID และรหัสผ่าน');return;}
@@ -1592,54 +1444,15 @@ function AuthScreen({onLogin, pendingLine, busyLine}){
     try{ const u=await apiRegister({userId:userId.trim(),password:pwd,displayName:name.trim(),dept:dept.trim(),role:'member'}); onLogin(u); }
     catch(e){ setErr(e.message); setBusy(false); }
   };
-  const doLineRegister=async()=>{
-    if(!name.trim()){setErr('กรอกชื่อที่แสดง');return;}
-    if(!isAllowedEmail(email)){setErr('อีเมลต้องเป็นโดเมนบริษัทเท่านั้น เช่น name@mudandhound.co.th');return;}
-    setBusy(true);setErr('');
-    try{
-      const u=await apiRegisterWithLine({lineUserId:pendingLine.userId, displayName:name.trim(), dept:dept.trim(), email:email.trim()});
-      onLogin(u);
-    }catch(e){ setErr(e.message); setBusy(false); }
-  };
-  const startLineLogin=()=>{ window.location.href = buildLineAuthUrl(); };
 
-  const submit = mode==='login'?doLogin : mode==='register'?doRegister : doLineRegister;
+  const submit = mode==='login'?doLogin:doRegister;
   const onEnter=e=>{ if(e.key==='Enter')submit(); };
-
-  if(busyLine){
-    return(<div className="auth-wrap"><div className="auth-card" style={{textAlign:'center',padding:'50px 28px'}}>
-      <div className="spinner" style={{margin:'0 auto 18px'}}></div>
-      <div style={{fontSize:13.5,color:'var(--text-muted)'}}>กำลังเชื่อมต่อกับ LINE...</div>
-    </div></div>);
-  }
-
-  if(mode==='lineRegister'){
-    return(<div className="auth-wrap"><div className="auth-card">
-      <div className="auth-logo" style={{background:'linear-gradient(135deg,#06C755,#04A648)'}}><Icon name="line" size={24}/></div>
-      <div className="auth-title">ยืนยันตัวตนพนักงาน</div>
-      <div className="auth-sub">เชื่อมต่อ LINE สำเร็จ — กรอกข้อมูลให้ครบเพื่อสมัครสมาชิกครั้งแรก</div>
-      {err&&<div className="auth-err"><Icon name="warn" size={15}/><span>{err}</span></div>}
-      <div className="auth-field"><label>ชื่อที่แสดง<span className="req">*</span></label><input className="auth-input" placeholder="เช่น เต้ วราการ" value={name} onChange={e=>setName(e.target.value)} onKeyDown={onEnter}/></div>
-      <div className="auth-field"><label>แผนก</label><input className="auth-input" placeholder="เช่น IT Department (ไม่บังคับ)" value={dept} onChange={e=>setDept(e.target.value)} onKeyDown={onEnter}/></div>
-      <div className="auth-field">
-        <label>อีเมลบริษัท<span className="req">*</span></label>
-        <input className="auth-input" placeholder="name@mudandhound.co.th" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={onEnter} autoComplete="email"/>
-        <div style={{fontSize:11,color:'var(--text-faint)',marginTop:6,lineHeight:1.6}}>ต้องเป็นอีเมลบริษัทในเครือเท่านั้น: @subsrithai.co.th, @mudandhound.co.th, @greyhound.co.th, @goldendonuts.co.th, @abpcafe.co.th</div>
-      </div>
-      <button className="auth-btn" disabled={busy} onClick={submit}>{busy?'กำลังบันทึก...':'ยืนยันและเข้าสู่ระบบ'}</button>
-    </div></div>);
-  }
 
   return(<div className="auth-wrap"><div className="auth-card">
     <div className="auth-logo"><Icon name="calendar" size={26}/></div>
     <div className="auth-title">{mode==='login'?'เข้าสู่ระบบ':'สมัครสมาชิก'}</div>
     <div className="auth-sub">ระบบจองห้องประชุม · Meeting Room Booking</div>
     {err&&<div className="auth-err"><Icon name="warn" size={15}/><span>{err}</span></div>}
-
-    {mode==='login'&&<>
-      <button className="line-login-btn" onClick={startLineLogin}><Icon name="line" size={18}/>เข้าสู่ระบบด้วย LINE</button>
-      <div className="auth-divider"><span>หรือใช้ User ID</span></div>
-    </>}
 
     {mode==='register'&&<div className="auth-field"><label>ชื่อที่แสดง<span className="req">*</span></label><input className="auth-input" placeholder="เช่น เต้ วราการ" value={name} onChange={e=>setName(e.target.value)} onKeyDown={onEnter}/></div>}
     <div className="auth-field"><label>User ID<span className="req">*</span></label><input className="auth-input" placeholder="ชื่อผู้ใช้สำหรับล็อกอิน" value={userId} onChange={e=>setUserId(e.target.value)} onKeyDown={onEnter} autoComplete="username"/></div>
@@ -1813,155 +1626,7 @@ function RoomsAdmin({user,bookings,toast,reload}){
 }
 
 /* ====== จัดการประกาศ (Admin เท่านั้น) ====== */
-function AnnouncementFormModal({item,announcements,onSave,onClose,saving}){
-  const isEdit=!!item.id;
-  const [title,setTitle]=useState(item.title||'');
-  const [body,setBody]=useState(item.body||'');
-  const [link,setLink]=useState(item.link||'');
-  const [pinned,setPinned]=useState(item.pinned||false);
-  const [featured,setFeatured]=useState(item.featured||false);
-  const featuredCount=(announcements||[]).filter(a=>a.featured&&a.id!==item.id).length;
-  const featuredFull=featuredCount>=4 && !featured;
-  const handleSave=()=>{
-    if(!title.trim()||!body.trim())return;
-    onSave({id:item.id||undefined,title:title.trim(),body:body.trim(),link:link.trim(),pinned,featured});
-  };
-  return(
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" style={{maxWidth:480}} onClick={e=>e.stopPropagation()}>
-        <div className="modal-head">
-          <Icon name={isEdit?'edit':'plus'} size={18}/>
-          {isEdit?'แก้ไขประกาศ':'เพิ่มประกาศใหม่'}
-          <button className="modal-x" style={{position:'static',marginLeft:'auto',background:'var(--surface-2)',color:'var(--text-muted)'}} onClick={onClose}><Icon name="x" size={17}/></button>
-        </div>
-        <div style={{padding:'16px 20px 22px'}}>
-          <div className="form-grid">
-            <div className="field">
-              <label>หัวข้อประกาศ<span className="req">*</span></label>
-              <input className="inp" placeholder="เช่น แจ้งปิดปรับปรุงห้องประชุม" value={title} onChange={e=>setTitle(e.target.value)}/>
-            </div>
-            <div className="field">
-              <label>เนื้อหา<span className="req">*</span></label>
-              <textarea className="inp" rows={4} style={{resize:'vertical',fontFamily:'inherit'}} placeholder="รายละเอียดประกาศ..." value={body} onChange={e=>setBody(e.target.value)}/>
-            </div>
-            <div className="field">
-              <label>ลิงก์เพิ่มเติม <span style={{color:'var(--text-faint)',fontWeight:400}}>(ไม่บังคับ)</span></label>
-              <input className="inp" placeholder="https://... สำหรับปุ่ม 'เพิ่มเติม' ในประกาศ" value={link} onChange={e=>setLink(e.target.value)}/>
-            </div>
-            <div className="set-row" style={{padding:'8px 4px'}}>
-              <div className="set-ic"><Icon name="megaphone" size={16}/></div>
-              <div className="set-body"><div className="t">ปักหมุดไว้บนสุด</div><div className="d">แสดงก่อนประกาศอื่นเสมอในหน้าหลัก</div></div>
-              <div className={"switch"+(pinned?' on':'')} onClick={()=>setPinned(p=>!p)}></div>
-            </div>
-            <div className="set-row" style={{padding:'8px 4px'}}>
-              <div className="set-ic"><Icon name="sparkle" size={16}/></div>
-              <div className="set-body"><div className="t">ประกาศเด่น (ขึ้น Popup ตอน login)</div><div className="d">แสดงสูงสุด 4 อัน · ตอนนี้มี {featuredCount} อัน{featuredFull?' (ครบแล้ว ปิดอันอื่นก่อน)':''}</div></div>
-              <div className={"switch"+(featured?' on':'')} onClick={()=>{if(!featuredFull)setFeatured(f=>!f);}} style={featuredFull?{opacity:.4,cursor:'not-allowed'}:{}}></div>
-            </div>
-            <button className="btn btn-primary btn-block" disabled={!title.trim()||!body.trim()||saving} onClick={handleSave}>
-              <Icon name={saving?'clock':'check'} size={16}/>
-              {saving?'กำลังบันทึก...':(isEdit?'บันทึกการแก้ไข':'เพิ่มประกาศ')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function AnnouncementsAdmin({user,announcements,toast,reload}){
-  const [editItem,setEditItem]=useState(null);
-  const [delConfirm,setDelConfirm]=useState(null);
-  const [saving,setSaving]=useState(false);
-
-  if(!user.isAdmin) return(
-    <div className="card pad" style={{textAlign:'center',padding:'48px 24px'}}>
-      <Icon name="shield" size={48} sw={1.2}/>
-      <div style={{fontSize:17,fontWeight:600,margin:'16px 0 8px'}}>ไม่มีสิทธิ์เข้าถึง</div>
-      <div style={{color:'var(--text-muted)',fontSize:13}}>หน้านี้สำหรับ Admin เท่านั้น</div>
-    </div>
-  );
-
-  const handleSave=async(a)=>{
-    setSaving(true);
-    try{
-      await apiSaveAnnouncement({...a,createdBy:user.name});
-      await reload();
-      setEditItem(null);
-      toast(a.id?'แก้ไขประกาศเรียบร้อย':'เพิ่มประกาศเรียบร้อย','ok');
-    }catch(e){ toast(e.message,'err'); }
-    setSaving(false);
-  };
-  const handleDelete=async(id)=>{
-    setSaving(true);
-    try{
-      await apiDeleteAnnouncement(id);
-      await reload();
-      setDelConfirm(null);
-      toast('ลบประกาศเรียบร้อย','ok');
-    }catch(e){ toast(e.message,'err'); }
-    setSaving(false);
-  };
-
-  return(
-    <div style={{maxWidth:680}}>
-      <div className="row-between" style={{marginBottom:16}}>
-        <div style={{fontSize:13,color:'var(--text-muted)'}}>{announcements.length} ประกาศ</div>
-        <button className="btn btn-primary" onClick={()=>setEditItem({})}><Icon name="plus" size={16}/>เพิ่มประกาศใหม่</button>
-      </div>
-
-      <div className="manage-list">
-        {announcements.length===0&&<div className="card pad"><div className="empty">ยังไม่มีประกาศ กดปุ่มด้านบนเพื่อเพิ่ม</div></div>}
-        {announcements.map(a=>(
-          <div className="manage-row" key={a.id} style={{alignItems:'flex-start'}}>
-            <div className="manage-color" style={{background:a.pinned?'linear-gradient(135deg,#F59E0B,#D97706)':'linear-gradient(135deg,#64748B,#334155)',flexShrink:0}}>
-              <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff'}}><Icon name="megaphone" size={18}/></div>
-            </div>
-            <div className="manage-body">
-              <div className="manage-name">{a.pinned&&'📌 '}{a.featured&&<span className="badge b-amber" style={{marginRight:6}}><Icon name="sparkle" size={10}/>เด่น</span>}{a.title}</div>
-              <div className="manage-sub" style={{display:'block'}}>
-                <div style={{marginBottom:4}}>{a.body}</div>
-                <span style={{color:'var(--text-faint)'}}>{a.date} · โดย {a.createdBy||'-'}</span>
-              </div>
-            </div>
-            <div style={{display:'flex',gap:7,flexShrink:0}}>
-              <button className="btn btn-ghost btn-sm" onClick={()=>setEditItem({...a})}><Icon name="edit" size={14}/>แก้ไข</button>
-              <button className="btn btn-sm" style={{background:'var(--red-bg)',color:'var(--red-tx)',border:'1px solid var(--red)'}}
-                onClick={()=>setDelConfirm(a)} disabled={saving}>
-                <Icon name="trash" size={14}/>ลบ
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {editItem!==null&&(
-        <AnnouncementFormModal item={editItem} announcements={announcements} saving={saving} onSave={handleSave} onClose={()=>setEditItem(null)}/>
-      )}
-
-      {delConfirm&&(
-        <div className="overlay" onClick={()=>setDelConfirm(null)}>
-          <div className="modal" style={{maxWidth:380}} onClick={e=>e.stopPropagation()}>
-            <div className="modal-head"><Icon name="warn" size={18} sw={2}/> ยืนยันลบประกาศ</div>
-            <div style={{padding:'14px 20px 20px'}}>
-              <div style={{fontSize:13.5,marginBottom:16,lineHeight:1.6}}>
-                ต้องการลบประกาศ <b>{delConfirm.title}</b> ใช่หรือไม่?
-              </div>
-              <div style={{display:'flex',gap:10}}>
-                <button className="btn btn-ghost btn-block" onClick={()=>setDelConfirm(null)}>ยกเลิก</button>
-                <button className="btn btn-danger btn-block" disabled={saving} onClick={()=>handleDelete(delConfirm.id)}>
-                  <Icon name="trash" size={15}/>{saving?'กำลังลบ...':'ลบประกาศนี้'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ====== APP ====== */
 /* ====== QR MODAL (แชร์ลิงก์ดูตารางห้อง) ====== */
 function QRModal({url,close}){
   const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(url);
@@ -1980,47 +1645,11 @@ function QRModal({url,close}){
 }
 
 /* ====== PUBLIC PREVIEW (ดูตารางห้องได้โดยไม่ต้องล็อกอิน — จองต้องล็อกอินเท่านั้น) ====== */
-function PublicPreview({bookings,announcements,onWantAuth}){
+function PublicPreview({bookings,onWantAuth}){
   const [showQR,setShowQR]=useState(false);
-  const [pview,setPview]=useState('day'); // เริ่มที่ "วันนี้" เพื่อให้เห็นเวลาปัจจุบันทันที
-  const [dayRoomFilter,setDayRoomFilter]=useState('all');
-  const [now,setNow]=useState(Date.now());
-  const [pubView,setPubView]=useState('main'); // 'main' | 'detail' | 'all' — ดูประกาศได้แบบอ่านอย่างเดียว ไม่ต้อง login
-  const [pubItem,setPubItem]=useState(null);
-  const timelineRef=useRef(null);
-  const trackRef=useRef(null);
-  const cardsRowRef=useRef(null);
-  const [showHint,setShowHint]=useState(false);
-  useEffect(()=>{const iv=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(iv);},[]);
-  useEffect(()=>{
-    const el=cardsRowRef.current;
-    if(el && announcements && announcements.length>1 && pubView==='main'){
-      const overflowing=el.scrollWidth>el.clientWidth+8;
-      if(overflowing){ setShowHint(true); const t=setTimeout(()=>setShowHint(false),4500); return ()=>clearTimeout(t); }
-    }
-  },[announcements,pubView]);
-  const wk = startOfWeek(TODAY);
-  const days = [...Array(7)].map((_,i)=>addDays(wk,i));
+  const [cursor,setCursor]=useState(TODAY);
   const url = window.location.origin + window.location.pathname;
-
-  const H_START=7,H_END=20,SPAN=(H_END-H_START)*60;
-  const hours=[];for(let h=H_START;h<=H_END;h++)hours.push(h);
-  const pos=(s,e)=>({left:(t2m(s)-H_START*60)/SPAN*100+'%',width:(t2m(e)-t2m(s))/SPAN*100+'%'});
-  const BH_S=9*60,BH_E=18*60;
-  const bhPos={left:(BH_S-H_START*60)/SPAN*100+'%',width:(BH_E-BH_S)/SPAN*100+'%'};
-  const nowMin=new Date(now).getHours()*60+new Date(now).getMinutes();
-  const nowPos=(nowMin>=H_START*60&&nowMin<=H_END*60)?(nowMin-H_START*60)/SPAN*100+'%':null;
-  const nowFrac=(nowMin-H_START*60)/SPAN;
-  useEffect(()=>{
-    if(pview==='day'&&timelineRef.current&&trackRef.current){
-      const trackWidth=trackRef.current.offsetWidth;
-      const target=Math.max(0,nowFrac*trackWidth-80);
-      timelineRef.current.scrollLeft=target;
-    }
-  },[pview]);
-  const todayHoliday=holidayOf(TODAY);
-  const goPub=p=>{ if(p==='home') setPubView('main'); else if(p==='allAnnouncements') setPubView('all'); };
-  const openPubAnnounce=item=>{ setPubItem(item); setPubView('detail'); };
+  const requireAuth = () => onWantAuth(); // preview อ่านอย่างเดียว — กดจอง/ดูรายละเอียดต้อง login ก่อนเสมอ
 
   return(<div style={{minHeight:'100vh',background:'var(--bg)'}}>
     <header className="topbar preview-topbar">
@@ -2032,109 +1661,13 @@ function PublicPreview({bookings,announcements,onWantAuth}){
       </div>
     </header>
     <div style={{padding:'22px 26px 60px',maxWidth:1100,margin:'0 auto'}}>
-      {pubView==='detail'&&<AnnouncementDetailPage item={pubItem} go={goPub}/>}
-      {pubView==='all'&&<AllAnnouncementsPage announcements={announcements||[]} go={goPub}/>}
-      {pubView==='main'&&<>
-      <div className="card pad" style={{marginBottom:16}}>
-        <div className="row-between" style={{margin:'0 0 12px'}}>
-          <div className="section-title" style={{margin:0}}><Icon name="megaphone" size={17}/>ประกาศ</div>
-          {announcements&&announcements.length>0&&<span className="link" onClick={()=>setPubView('all')}>ดูทั้งหมด →</span>}
-        </div>
-        {announcements&&announcements.length?
-          <div style={{position:'relative'}}>
-            <div className="announce-cards-row" ref={cardsRowRef} onScroll={()=>setShowHint(false)}>
-              {announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a} onView={openPubAnnounce}/>)}
-            </div>
-            {showHint&&<div className="scroll-hint-arrow"><Icon name="play" size={22}/></div>}
-          </div>
-          :<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
-      </div>
-      <div className="card pad">
-        <div className="row-between" style={{marginBottom:4,flexWrap:'wrap',gap:10}}>
-          <div className="section-title" style={{margin:0}}>{pview==='week'?`สัปดาห์นี้ · ${thShort(wk)} – ${thShort(addDays(wk,6))}`:`วันนี้ · ${thFull(TODAY)}`}</div>
-          <div className="seg">
-            <button className={pview==='week'?'on':''} onClick={()=>setPview('week')}>สัปดาห์</button>
-            <button className={pview==='day'?'on':''} onClick={()=>setPview('day')}>วันนี้</button>
-          </div>
-        </div>
-        <p style={{fontSize:12.5,color:'var(--text-muted)',margin:'0 0 16px'}}>ต้องการจองห้องประชุม? <b style={{color:'var(--primary)',cursor:'pointer'}} onClick={onWantAuth}>เข้าสู่ระบบที่นี่</b></p>
-        {todayHoliday&&<div className="holiday-banner"><Icon name="calendar" size={15}/>วันนี้เป็นวันหยุดบริษัท: {todayHoliday.name}</div>}
-
-        {pview==='week'&&<div className="week-grid">
-          {days.map(d=>{
-            const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
-            const dt=parseISO(d);
-            const dHol=holidayOf(d);
-            return(<div key={d} className={"wcol"+(d===TODAY?' today':'')}>
-              <div className="wc-head">{TH_DOW[dt.getDay()]}<b>{dt.getDate()}</b></div>
-              {dHol?<div className="wc-empty" style={{color:'var(--red-tx)'}}>หยุด: {dHol.name}</div>:(list.length?list.map(b=><div key={b.id} className="wc-item" style={{background:STATUS[b.status].bar,cursor:'default'}}><b>{ROOM(b.room).name}</b><small>{b.s}-{b.e} · {b.title}</small></div>):<div className="wc-empty">ว่าง</div>)}
-            </div>);
-          })}
-        </div>}
-
-        {pview==='day'&&<>
-          <div className="timeline" ref={timelineRef}><div className="tl-inner">
-            <div className="tl-head">
-              <div className="room-select-wrap tl-sticky-col" style={{minWidth:0,width:'100%'}}>
-                <span className="room-select-dot" style={{background:dayRoomFilter==='all'?'#64748B':(ROOM(dayRoomFilter).g||['#64748B'])[0]}}></span>
-                <select className="inp room-select" style={{fontSize:12,padding:'7px 30px 7px 30px'}} value={dayRoomFilter} onChange={ev=>setDayRoomFilter(ev.target.value)}>
-                  <option value="all">ทุกห้องประชุม</option>
-                  {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
-                <Icon name="cdown" size={13}/>
-              </div>
-              <div className="tl-hours">{hours.map(h=><span key={h}>{String(h).padStart(2,'0')}</span>)}</div>
-            </div>
-            {ROOMS.filter(r=>dayRoomFilter==='all'||r.id===dayRoomFilter).map((r,idx)=>{
-              const list=bookings.filter(b=>b.room===r.id&&b.date===TODAY&&ACTIVE.includes(b.status));
-              return(<div className="tl-row" key={r.id}>
-                <div className="tl-room tl-sticky-col"><div className="tl-room-ic" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={15}/></div><div>{r.name}<small>{r.cap} ที่นั่ง</small></div></div>
-                <div className="tl-track" ref={idx===0?trackRef:null}>
-                  <div className="tl-grid">{hours.slice(1).map((h,i)=><span key={i}></span>)}</div>
-                  <div className="bh-shade" style={bhPos}></div>
-                  {nowPos&&<div className="now-line" style={{left:nowPos}}>{idx===0&&<span className="now-badge">{String(new Date(now).getHours()).padStart(2,'0')}:{String(new Date(now).getMinutes()).padStart(2,'0')}</span>}</div>}
-                  {list.map(b=><div key={b.id} className="tl-block" style={{...pos(b.s,b.e),background:STATUS[b.status].bar,cursor:'default'}}>{b.title}<small>{b.s}-{b.e}</small></div>)}
-                </div>
-              </div>);
-            })}
-          </div></div>
-          <div className="legend">
-            {Object.entries(STATUS).filter(([k])=>!['released','draft'].includes(k)).map(([k,v])=><span key={k}><i style={{background:v.bar}}></i>{v.label}</span>)}
-            <span><i style={{background:'var(--red)',width:2,borderRadius:0}}></i>เวลาปัจจุบัน</span>
-            <span><i style={{background:'rgba(37,99,235,.25)'}}></i>เวลาทำการปกติ 09:00-18:00</span>
-          </div>
-        </>}
-      </div>
-      </>}
+      <p style={{fontSize:12.5,color:'var(--text-muted)',margin:'0 0 16px'}}>ต้องการจองห้องประชุม? <b style={{color:'var(--primary)',cursor:'pointer'}} onClick={onWantAuth}>เข้าสู่ระบบที่นี่</b></p>
+      {/* ใช้ CalendarView ตัวเดียวกับข้างในเป๊ะ — เห็นทุกมุมมอง (ตารางห้อง/วัน/สัปดาห์/เดือน) เหมือนกันทุกอย่าง
+          เพียงแต่กดจอง/ดูรายละเอียดแล้วจะเด้งไปหน้า login แทน */}
+      <CalendarView bookings={bookings} openDetail={requireAuth} openForm={requireAuth} cursor={cursor} setCursor={setCursor}/>
     </div>
     {showQR&&<QRModal url={url} close={()=>setShowQR(false)}/>}
   </div>);
-}
-
-/* ====== Popup ประกาศเด่น (ขึ้นตอน login ถ้ามีประกาศ featured) ====== */
-function AnnouncementPopup({items,onClose,onView}){
-  const [dontShow,setDontShow]=useState(false);
-  return(
-    <div className="overlay" onClick={()=>onClose(dontShow)}>
-      <div className="modal announce-modal" onClick={e=>e.stopPropagation()}>
-        <div className="announce-modal-head">
-          <Icon name="megaphone" size={18}/>
-          <span style={{flex:1}}>ประกาศ{items.length>1?` (${items.length})`:''}</span>
-          <button onClick={()=>onClose(dontShow)} style={{display:'flex',padding:6,borderRadius:8,background:'rgba(255,255,255,.18)',color:'#fff'}}><Icon name="x" size={16}/></button>
-        </div>
-        <div className="announce-cards-row" style={{padding:16}}>
-          {items.map(a=><AnnouncementCard key={a.id} item={a} onView={onView}/>)}
-        </div>
-        <div className="announce-modal-foot">
-          <label className="announce-checkbox">
-            <input type="checkbox" checked={dontShow} onChange={e=>setDontShow(e.target.checked)}/>
-            ไม่แสดงอีกสำหรับวันนี้
-          </label>
-          <button className="btn btn-primary" onClick={()=>onClose(dontShow)}>รับทราบ</button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function App(){
@@ -2145,7 +1678,6 @@ function App(){
   const [user,setUser]=useState(()=>{try{const s=safeStore.get('mrb_user');return s?shapeUser(JSON.parse(s)):null;}catch(e){return null;}});
   // API AI — state aiConfig ถอดออกชั่วคราว (ดู AI_Module.js)
   const [bookings,setBookings]=useState([]);
-  const [announcements,setAnnouncements]=useState([]);
   const [detail,setDetail]=useState(null);
   const [editing,setEditing]=useState(null);
   const [showProfile,setShowProfile]=useState(false);
@@ -2164,11 +1696,6 @@ function App(){
   const [saving,setSaving]=useState(null);           // overlay ระหว่างบันทึก {text}
   const [successMsg,setSuccessMsg]=useState(null);   // ติ๊กถูกเขียวกลางจอ
   const [wantAuth,setWantAuth]=useState(false);       // ผู้ใช้กด "เข้าสู่ระบบ" จากหน้า preview สาธารณะ
-  const [showAnnouncePopup,setShowAnnouncePopup]=useState(false);
-  const [viewAnnounce,setViewAnnounce]=useState(null);
-  const popupCheckedRef=useRef(false);
-  const [pendingLine,setPendingLine]=useState(null);  // โปรไฟล์ LINE ที่ยังไม่เคยผูกบัญชี (needsRegister)
-  const [busyLine,setBusyLine]=useState(false);       // กำลังแลก code กับ LINE อยู่
 
   const toast=(msg,type='ok')=>setToastMsg({msg,type});
 
@@ -2184,14 +1711,13 @@ function App(){
       setCursor(c=>c||TODAY);
       // API AI — โหลด aiKey จากชีตถอดออกชั่วคราว (ดู AI_Module.js)
       setBookings(prep(d.bookings||[]));
-      setAnnouncements(d.announcements||[]);
       setReady(true);
     }catch(e){ setBootError(e.message); }
   };
   useEffect(()=>{loadData();},[]);
 
   const reload=async()=>{
-    try{const d=await apiGetAll();ROOMS=d.rooms||[];if(d.today)TODAY=d.today;setBookings(prep(d.bookings||[]));setAnnouncements(d.announcements||[]);}
+    try{const d=await apiGetAll();ROOMS=d.rooms||[];if(d.today)TODAY=d.today;setBookings(prep(d.bookings||[]));}
     catch(e){toast('โหลดข้อมูลใหม่ไม่สำเร็จ: '+e.message,'err');}
   };
 
@@ -2205,53 +1731,9 @@ function App(){
   useEffect(()=>{if(successMsg){const t=setTimeout(()=>setSuccessMsg(null),1500);return()=>clearTimeout(t);}},[successMsg]);
 
   // ── auth ──
-  const onLogin=u=>{const su=shapeUser(u);setUser(su);safeStore.set('mrb_user',JSON.stringify(su));setPendingLine(null);setWantAuth(false);toast('ยินดีต้อนรับ '+su.nick,'ok');};
-
-  // ── Popup ประกาศเด่น: แสดงครั้งเดียวตอนเข้าระบบสำเร็จ (เว้นถ้าติ๊ก "ไม่แสดงอีกวันนี้" ไว้แล้ว) ──
-  useEffect(()=>{
-    if(user&&ready&&!popupCheckedRef.current){
-      popupCheckedRef.current=true;
-      const featured=announcements.filter(a=>a.featured).slice(0,4);
-      if(featured.length>0){
-        const dismissedDate=safeStore.get('mrb_announce_dismiss_date');
-        if(dismissedDate!==TODAY) setShowAnnouncePopup(true);
-      }
-    }
-  },[user,ready,announcements]);
-  const closeAnnouncePopup=(dontShowToday)=>{
-    setShowAnnouncePopup(false);
-    if(dontShowToday) safeStore.set('mrb_announce_dismiss_date',TODAY);
-  };
-  const openAnnouncement=(item)=>{
-    setViewAnnounce(item);
-    setShowAnnouncePopup(false);
-    setPage('announcementDetail');
-  };
+  const onLogin=u=>{const su=shapeUser(u);setUser(su);safeStore.set('mrb_user',JSON.stringify(su));setWantAuth(false);toast('ยินดีต้อนรับ '+su.nick,'ok');};
   const logout=()=>{safeStore.del('mrb_user');setUser(null);setPage('home');setWantAuth(false);};
 
-  // ── LINE Login callback: ตรวจ ?code= ใน URL ตอนกลับมาจากหน้ายืนยันตัวตน LINE ──
-  useEffect(()=>{
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    if(!code) return;
-    window.history.replaceState({}, '', window.location.pathname); // ลบ ?code= ออกจาก URL กันเรียกซ้ำตอนรีเฟรช
-    const savedState = safeStore.get('line_oauth_state');
-    if(state && savedState && state!==savedState){
-      toast('การยืนยันตัวตนจาก LINE ไม่ถูกต้อง กรุณาลองใหม่','err');
-      setWantAuth(true);
-      return;
-    }
-    setBusyLine(true); setWantAuth(true);
-    apiLineLogin(code).then(res=>{
-      setBusyLine(false);
-      if(res.needsRegister) setPendingLine(res.line);
-      else if(res.user) onLogin(res.user);
-    }).catch(e=>{
-      setBusyLine(false);
-      toast('เข้าสู่ระบบด้วย LINE ไม่สำเร็จ: '+e.message,'err');
-    });
-  },[]);
 
   // ── flow บันทึกกลาง: overlay (กำลังบันทึก) → skeleton (reload) → ติ๊กถูกเขียว ──
   const runSave=async({text,fn,ok,before,dest})=>{
@@ -2299,8 +1781,8 @@ function App(){
   if(bootError)return <BootScreen error={bootError} onRetry={loadData}/>;
   if(!ready)return <SkeletonScreen/>;
   if(!user){
-    if(wantAuth||busyLine||pendingLine) return <AuthScreen onLogin={onLogin} pendingLine={pendingLine} busyLine={busyLine}/>;
-    return <PublicPreview bookings={bookings} announcements={announcements} onWantAuth={()=>setWantAuth(true)}/>;
+    if(wantAuth) return <AuthScreen onLogin={onLogin}/>;
+    return <PublicPreview bookings={bookings} onWantAuth={()=>setWantAuth(true)}/>;
   }
 
   const ti={ok:'checkcircle',warn:'warn',err:'x'}[toastMsg?.type||'ok'];
@@ -2312,16 +1794,13 @@ function App(){
         <Topbar page={page} dark={dark} setDark={setDark} search={search} setSearch={setSearch} user={user} onOpenMenu={()=>setShowMobileMenu(true)}/>
         <div className="scroll" ref={scrollRef} onScroll={handleMainScroll}>
           {refreshing ? <SkeletonContent/> : <>
-          {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm} announcements={announcements} onViewAnnounce={openAnnouncement}/>}
+          {page==='home'&&<Dashboard bookings={bookings} go={go} openDetail={setDetail} search={search} checkIn={checkIn} now={now} user={user} openForm={openForm}/>}
           {page==='form'&&<BookingForm key={JSON.stringify(prefill)} bookings={bookings} addBooking={addBooking} toast={toast} user={user} go={go} prefill={prefill} clearPrefill={()=>setPrefill({})}/>}
           {/* API AI — หน้า ChatBot ถอดออกชั่วคราว (ดู AI_Module.js) */}
           {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
           {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
-          {page==='announcementDetail'&&<AnnouncementDetailPage item={viewAnnounce} go={go}/>}
-          {page==='allAnnouncements'&&<AllAnnouncementsPage announcements={announcements} go={go}/>}
           {page==='holidays'&&<CompanyHolidaysPage/>}
-          {page==='announce'&&<AnnouncementsAdmin user={user} announcements={announcements} toast={toast} reload={reload}/>}
           {page==='manage'&&<RoomsAdmin user={user} bookings={bookings} toast={toast} reload={reload}/>}
           {page==='reports'&&<ReportsPage bookings={bookings}/>}
           {page==='settings'&&<SettingsPage dark={dark} setDark={setDark} user={user} setUser={setUser} openProfile={()=>setShowProfile(true)} logout={logout}/>}
@@ -2334,7 +1813,6 @@ function App(){
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
       {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)} logout={logout}/>}
       {showScrollTop&&<button className="scroll-top-btn" onClick={scrollToTop} title="เลื่อนขึ้นบนสุด"><span style={{display:'flex',transform:'rotate(180deg)'}}><Icon name="cdown" size={20} sw={2.4}/></span></button>}
-      {showAnnouncePopup&&<AnnouncementPopup items={announcements.filter(a=>a.featured).slice(0,4)} onClose={closeAnnouncePopup} onView={openAnnouncement}/>}
       {saving&&<SavingOverlay text={saving.text}/>}
       {successMsg&&<SuccessCheck msg={successMsg}/>}
       {toastMsg&&<div className={"toast "+toastMsg.type}><span className="ti"><Icon name={ti} size={17}/></span>{toastMsg.msg}</div>}
