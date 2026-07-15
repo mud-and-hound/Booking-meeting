@@ -824,22 +824,7 @@ function AnnouncementCard({item,onView}){
 function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,announcements,onViewAnnounce}){
   const today=bookings.filter(b=>b.date===TODAY);
   const myToday=today.filter(b=>b.owner===user.id&&ACTIVE.includes(b.status)).sort((a,b)=>t2m(a.s)-t2m(b.s));
-  const q=search.trim().toLowerCase();
-  const availRooms=ROOMS.filter(r=>!q||r.name.toLowerCase().includes(q));
   const activeCheckin=bookings.find(b=>b.status==='in-use'&&!b.checkedIn&&b.autoRelease);
-  const cardsRowRef=useRef(null);
-  const [showHint,setShowHint]=useState(false);
-  useEffect(()=>{
-    const el=cardsRowRef.current;
-    if(el && announcements && announcements.length>1){
-      const overflowing=el.scrollWidth>el.clientWidth+8;
-      if(overflowing){
-        setShowHint(true);
-        const t=setTimeout(()=>setShowHint(false),4500);
-        return ()=>clearTimeout(t);
-      }
-    }
-  },[announcements]);
   return(
     <div>
       {activeCheckin&&<CheckinBar b={activeCheckin} now={now} checkIn={checkIn}/>}
@@ -847,38 +832,15 @@ function Dashboard({bookings,go,openDetail,search,checkIn,now,user,openForm,anno
         <div style={{fontSize:13,color:'var(--text-muted)'}}><Icon name="calendar" size={14}/> วันนี้ {thFull(TODAY)}</div>
         <button className="btn btn-primary" onClick={()=>openForm({})}><Icon name="plus" size={16}/>จองห้องประชุม</button>
       </div>
-      <div className="dash-top" style={{marginBottom:22}}>
-        <div className="card pad">
-          <div className="section-title" style={{margin:'0 0 8px'}}>การจองของวันนี้</div>
-          {myToday.length?myToday.map(b=>(
-            <div className="li" key={b.id} onClick={()=>openDetail(b)} style={{cursor:'pointer'}}>
-              <div className="li-time">{b.s} - {b.e}</div>
-              <div className="li-body"><div className="li-title">{ROOM(b.room).name}</div><div className="li-sub">{b.title}</div></div>
-              <span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span>
-            </div>
-          )):<div className="empty">วันนี้คุณยังไม่มีการจอง</div>}
-        </div>
-        <div className="card pad">
-          <div className="row-between" style={{margin:'0 0 12px'}}>
-            <div className="section-title" style={{margin:0}}><Icon name="megaphone" size={17}/>ประกาศ</div>
-            {announcements&&announcements.length>0&&<span className="link" onClick={()=>go('allAnnouncements')}>ดูทั้งหมด →</span>}
+      <div className="card pad">
+        <div className="section-title" style={{margin:'0 0 8px'}}>การจองของวันนี้</div>
+        {myToday.length?myToday.map(b=>(
+          <div className="li" key={b.id} onClick={()=>openDetail(b)} style={{cursor:'pointer'}}>
+            <div className="li-time">{b.s} - {b.e}</div>
+            <div className="li-body"><div className="li-title">{ROOM(b.room).name}</div><div className="li-sub">{b.title}</div></div>
+            <span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span>
           </div>
-          {announcements&&announcements.length?
-            <div style={{position:'relative'}}>
-              <div className="announce-cards-row" ref={cardsRowRef} onScroll={()=>setShowHint(false)}>
-                {announcements.slice(0,4).map(a=><AnnouncementCard key={a.id} item={a} onView={onViewAnnounce}/>)}
-              </div>
-              {showHint&&<div className="scroll-hint-arrow"><Icon name="play" size={22}/></div>}
-            </div>
-            :<div className="empty" style={{padding:'10px 4px'}}>ยังไม่มีประกาศ</div>}
-        </div>
-      </div>
-      <div className="row-between" style={{marginBottom:13}}>
-        <div className="section-title" style={{margin:0}}>ห้องว่างวันนี้</div>
-        <span className="link" onClick={()=>go('rooms')}>ดูห้องทั้งหมด →</span>
-      </div>
-      <div className="grid cols-4">
-        {availRooms.slice(0,4).map(r=><RoomCard key={r.id} room={r} bookings={bookings} date={TODAY} onBook={()=>openForm({roomId:r.id})} onView={()=>go('calendar')}/>)}
+        )):<div className="empty">วันนี้คุณยังไม่มีการจอง</div>}
       </div>
     </div>
   );
