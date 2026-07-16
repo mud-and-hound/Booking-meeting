@@ -273,14 +273,23 @@ input,select,textarea{font-family:inherit}
 /* month */
 .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .mh{text-align:center;font-size:11px;color:var(--text-muted);font-weight:500;padding:4px 0}
-.mcell{min-height:78px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:6px 7px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:3px}
-.mcell:hover{border-color:var(--primary)}.mcell.muted-cell{opacity:.4}
-.mcell.today{border-color:var(--primary);background:var(--primary-soft)}
-.mc-date{font-size:12.5px;font-weight:600}
-.mc-dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto}
-.mc-dot{width:7px;height:7px;border-radius:50%}
-.mc-count{font-size:9.5px;color:var(--text-muted);margin-top:2px}
-@media(max-width:560px){.mcell{min-height:58px;padding:4px}.mc-date{font-size:11px}}
+.mcell{aspect-ratio:1;background:var(--surface-2);border:1.5px solid transparent;border-radius:9px;padding:6px;cursor:pointer;transition:.15s;position:relative;display:flex;align-items:flex-start}
+.mcell:hover{filter:brightness(.97)}
+.mcell.muted-cell{opacity:.3;cursor:default}
+.mcell.today{border-color:var(--text)}
+.mcell.holiday-cell{background:var(--red-bg)!important}
+.mc-date-heat{font-size:12px;font-weight:600}
+.mc-count-badge{position:absolute;bottom:5px;right:7px;font-size:10.5px;font-weight:800}
+.mc-hol-dot{position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--red)}
+.heat-legend{display:flex;align-items:center;gap:6px;margin-top:14px;font-size:11px;color:var(--text-muted)}
+.heat-legend-grad{flex:1;max-width:160px;height:10px;border-radius:20px;background:linear-gradient(90deg,rgba(37,99,235,.1),rgba(37,99,235,.85))}
+.holiday-list-box{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.holiday-list-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.holiday-list-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.holiday-list-row:last-child{border:none}
+.holiday-list-date{width:28px;height:28px;border-radius:8px;background:var(--red-bg);color:var(--red-tx);font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.holiday-list-name{font-size:12.5px;color:var(--text);font-weight:500}
+@media(max-width:560px){.mcell{padding:4px}.mc-date-heat{font-size:10.5px}.mc-count-badge{font-size:9px;bottom:3px;right:5px}}
 
 /* tabs */
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
@@ -1018,7 +1027,18 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
 
       {view==='month'&&(()=>{
         const first=parseISO(cursor);first.setDate(1);const startISO=startOfWeek(toISO(first));
-        const cells=[...Array(42)].map((_,i)=>addDays(startISO,i));const mon=parseISO(cursor).getMonth();
+        const cellDates=[...Array(42)].map((_,i)=>addDays(startISO,i));const mon=parseISO(cursor).getMonth();
+
+        // นับจำนวนการจองแต่ละวันในเดือนนี้ก่อน เพื่อหาค่าสูงสุดสำหรับไล่สี heatmap
+        const countByDate={};
+        cellDates.forEach(d=>{
+          const dt=parseISO(d);
+          if(dt.getMonth()===mon) countByDate[d]=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status)&&(dayRoomFilter==='all'||b.room===dayRoomFilter)).length;
+        });
+        const maxCount=Math.max(1,...Object.values(countByDate));
+        const yearNow=parseISO(cursor).getFullYear();
+        const holidaysInMonth=COMPANY_HOLIDAYS.filter(h=>{const hd=parseISO(h.date);return hd.getMonth()===mon&&hd.getFullYear()===yearNow;});
+
         return<>
           <div className="room-select-row cal-sticky-row" style={{top:toolbarH}}>
             <label className="room-select-label"><Icon name="room" size={15}/>กรองตามห้อง</label>
@@ -1032,17 +1052,35 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
             </div>
           </div>
           <div className="month-grid" style={{marginBottom:6}}>{TH_DOW.map(d=><div key={d} className="mh">{d}</div>)}</div>
-          <div className="month-grid">{cells.map(d=>{
+          <div className="month-grid">{cellDates.map(d=>{
             const dt=parseISO(d);const inMon=dt.getMonth()===mon;
-            const list=bookings.filter(b=>b.date===d&&ACTIVE.includes(b.status)&&(dayRoomFilter==='all'||b.room===dayRoomFilter));
-            const dHol=holidayOf(d);
-            return(<div key={d} className={"mcell"+(!inMon?' muted-cell':'')+(d===TODAY?' today':'')} onClick={()=>{setCursor(d);setView('sheet');}}>
-              <div className="mc-date" style={{display:'flex',alignItems:'center',gap:3}}>{dt.getDate()}{dHol&&<Icon name="flag" size={10}/>}</div>
-              <div className="mc-dots">{list.slice(0,4).map(b=><span key={b.id} className="mc-dot" style={{background:STATUS[b.status].bar}}></span>)}</div>
-              {list.length>0&&<div className="mc-count">{list.length} รายการ</div>}
-              {dHol&&<div className="mc-count" style={{color:'var(--red-tx)'}}>{dHol.name}</div>}
-            </div>);
+            const count=inMon?(countByDate[d]||0):0;
+            const dHol=inMon&&holidayOf(d);
+            const intensity=count/maxCount;
+            const bg=count>0?`rgba(37,99,235,${(0.12+intensity*0.62).toFixed(2)})`:undefined;
+            const textColor=intensity>0.55?'#fff':undefined;
+            return(
+              <div key={d} className={"mcell"+(!inMon?' muted-cell':'')+(d===TODAY?' today':'')+(dHol?' holiday-cell':'')}
+                style={{background:dHol?undefined:bg}}
+                onClick={()=>inMon&&(()=>{setCursor(d);setView('sheet');})()}>
+                <span className="mc-date-heat" style={{color:dHol?'var(--red-tx)':textColor}}>{dt.getDate()}</span>
+                {count>0&&<span className="mc-count-badge" style={{color:textColor}}>{count}</span>}
+                {dHol&&<span className="mc-hol-dot"></span>}
+              </div>
+            );
           })}</div>
+          <div className="heat-legend">
+            <span>ว่าง</span><span className="heat-legend-grad"></span><span>ยุ่งมาก</span>
+          </div>
+          {holidaysInMonth.length>0&&<div className="holiday-list-box">
+            <div className="holiday-list-title"><Icon name="flag" size={13}/>วันหยุดบริษัทเดือนนี้</div>
+            {holidaysInMonth.map(h=>{const hd=parseISO(h.date);return(
+              <div className="holiday-list-row" key={h.date}>
+                <span className="holiday-list-date">{hd.getDate()}</span>
+                <span className="holiday-list-name">{h.name}</span>
+              </div>
+            );})}
+          </div>}
           <div style={{fontSize:11.5,color:'var(--text-muted)',marginTop:10,textAlign:'center'}}>กดที่วันเพื่อดูตารางห้อง</div>
         </>;
       })()}
