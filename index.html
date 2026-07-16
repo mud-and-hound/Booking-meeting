@@ -135,6 +135,16 @@ input,select,textarea{font-family:inherit}
 .room-gfx{height:118px;border-radius:11px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .room-gfx.sm{height:84px}.room-gfx .gxbadge{position:absolute;top:9px;left:9px;z-index:2}
 .room-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px;box-shadow:var(--shadow-sm);transition:.18s}
+.rooms-grid-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:560px){.rooms-grid-mini{grid-template-columns:repeat(3,1fr);gap:8px}}
+.room-mini-card{background:var(--surface);border-radius:14px;padding:13px 8px;text-align:center;box-shadow:var(--shadow-sm);position:relative;cursor:pointer;transition:.15s}
+.room-mini-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.room-mini-dot{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%}
+.room-mini-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;color:#fff}
+.room-mini-name{font-size:11.5px;font-weight:700;color:var(--text);line-height:1.3}
+.room-mini-cap{font-size:10px;color:var(--text-faint);margin-top:2px}
+.room-mini-cal{margin-top:9px;width:100%;padding:5px 0;border-radius:8px;background:var(--surface-2);color:var(--text-muted);display:flex;align-items:center;justify-content:center;transition:.15s}
+.room-mini-cal:hover{background:var(--primary-soft);color:var(--primary)}
 .room-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
 .room-card h4{font-size:14.5px;font-weight:600;margin:11px 2px 7px}
 .meta-row{display:flex;align-items:center;gap:6px;color:var(--text-muted);font-size:12px;margin:0 2px 9px}
@@ -293,6 +303,11 @@ input,select,textarea{font-family:inherit}
 
 /* tabs */
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.mb-search{font-size:13px;padding:11px 14px}
+.mb-filter-row{display:flex;gap:8px;margin-bottom:12px}
+.mb-filter-row .inp{flex:1;min-width:0}
+.mb-count-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;color:var(--text-muted)}
+.mb-count-select{width:auto;padding:6px 10px;font-size:12px}
 .tab{padding:8px 15px;border-radius:50px;font-size:12.5px;font-weight:500;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);transition:.15s}
 .tab.on{background:var(--primary);color:#fff;border-color:var(--primary)}.tab:active{transform:scale(.95)}
 
@@ -1091,14 +1106,41 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
 /* ====== MY BOOKINGS ====== */
 function MyBookings({bookings,openDetail,checkIn,user}){
   const [filter,setFilter]=useState('all');
-  const mine=bookings.filter(b=>b.owner===user.id);
+  const [search,setSearch]=useState('');
+  const [fDate,setFDate]=useState('');
+  const [fRoom,setFRoom]=useState('all');
+  const [showCount,setShowCount]=useState(10);
   const F={all:'ทั้งหมด',upcoming:'กำลังจะมาถึง',inuse:'กำลังใช้งาน',draft:'ร่าง',cancelled:'ยกเลิก'};
-  const show=mine.filter(b=>filter==='all'?true:filter==='upcoming'?['confirmed','pending'].includes(b.status):filter==='inuse'?b.status==='in-use':filter==='draft'?b.status==='draft':['cancelled','released'].includes(b.status));
+
+  const mine=bookings.filter(b=>b.owner===user.id);
+  const byStatus=mine.filter(b=>filter==='all'?true:filter==='upcoming'?['confirmed','pending'].includes(b.status):filter==='inuse'?b.status==='in-use':filter==='draft'?b.status==='draft':['cancelled','released'].includes(b.status));
+  const q=search.trim().toLowerCase();
+  const filtered=byStatus
+    .filter(b=>!q||b.title.toLowerCase().includes(q)||ROOM(b.room).name.toLowerCase().includes(q))
+    .filter(b=>!fDate||b.date===fDate)
+    .filter(b=>fRoom==='all'||b.room===fRoom)
+    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:t2m(a.s)-t2m(b.s));
+  const show=filtered.slice(0,showCount);
+
   return(
     <div>
-      <div className="tabs">{Object.entries(F).map(([k,l])=><button key={k} className={"tab"+(filter===k?' on':'')} onClick={()=>setFilter(k)}>{l}</button>)}</div>
+      <input className="inp mb-search" placeholder="🔍 ค้นหาหัวข้อ/ห้อง/ผู้จอง..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      <div className="tabs" style={{marginTop:10}}>{Object.entries(F).map(([k,l])=><button key={k} className={"tab"+(filter===k?' on':'')} onClick={()=>setFilter(k)}>{l}</button>)}</div>
+      <div className="mb-filter-row">
+        <input className="inp" type="date" value={fDate} onChange={e=>setFDate(e.target.value)}/>
+        <select className="inp" value={fRoom} onChange={e=>setFRoom(e.target.value)}>
+          <option value="all">ทุกห้องประชุม</option>
+          {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
+      </div>
+      <div className="mb-count-row">
+        <span>พบ {filtered.length} รายการ</span>
+        <select className="inp mb-count-select" value={showCount} onChange={e=>setShowCount(Number(e.target.value))}>
+          {[5,10,15,20,50,100].map(n=><option key={n} value={n}>แสดง {n}</option>)}
+        </select>
+      </div>
       <div className="card pad">
-        {show.length?show.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:t2m(a.s)-t2m(b.s)).map(b=>{
+        {show.length?show.map(b=>{
           const r=ROOM(b.room),canCheck=b.status==='in-use'&&!b.checkedIn;
           return(<div className="li" key={b.id}>
             <div className="li-time">{b.s} - {b.e}<small>{thShort(b.date)}</small></div>
@@ -1108,7 +1150,7 @@ function MyBookings({bookings,openDetail,checkIn,user}){
             {canCheck&&<button className="btn btn-primary btn-sm" onClick={()=>checkIn(b.id)}><Icon name="check" size={13}/>เช็คอิน</button>}
             <span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span>
           </div>);
-        }):<div className="empty">ไม่มีรายการในหมวดนี้</div>}
+        }):<div className="empty">ไม่มีรายการที่ตรงกับตัวกรอง</div>}
       </div>
     </div>
   );
@@ -1116,14 +1158,17 @@ function MyBookings({bookings,openDetail,checkIn,user}){
 
 /* ====== ROOMS PAGE ====== */
 function RoomsPage({bookings,go,openForm}){
-  return(<div className="grid cols-3">{ROOMS.map((r,idx)=>{
+  return(<div className="rooms-grid-mini">{ROOMS.map((r,idx)=>{
     const free=roomFree(r.id,TODAY,'09:00','10:00',bookings);
-    return(<div className="room-card" key={r.id}>
-      <RoomGfx room={r} badge={<span className={"badge "+(free?'b-green':'b-red')} style={{boxShadow:'var(--shadow-sm)'}}><span className="d"></span>{free?'ว่าง':'ไม่ว่าง'}</span>}/>
-      <h4>{r.name}</h4>
-      <div className="meta-row"><Icon name="users" size={14}/><span>{r.cap} ที่นั่ง</span><span style={{color:'var(--text-faint)'}}>·</span><span>ชั้น {idx%3+1}</span></div>
-      <div className="row-between"><button className="btn btn-ghost btn-sm" onClick={()=>go('calendar')}>ดูตาราง</button><button className="btn btn-primary btn-sm" onClick={()=>openForm({roomId:r.id})}>จองห้องนี้</button></div>
-    </div>);
+    return(
+      <div className="room-mini-card" key={r.id} onClick={()=>openForm({roomId:r.id})}>
+        <span className="room-mini-dot" style={{background:free?'var(--green)':'var(--red)'}}></span>
+        <div className="room-mini-icon" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={16} sw={2}/></div>
+        <div className="room-mini-name">{r.name}</div>
+        <div className="room-mini-cap">{r.cap} ที่นั่ง</div>
+        <button className="room-mini-cal" onClick={e=>{e.stopPropagation();go('calendar');}} title="ดูตาราง"><Icon name="calendar" size={12}/></button>
+      </div>
+    );
   })}</div>);
 }
 
