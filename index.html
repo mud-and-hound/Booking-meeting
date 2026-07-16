@@ -308,6 +308,17 @@ input,select,textarea{font-family:inherit}
 .mb-filter-row .inp{flex:1;min-width:0}
 .mb-count-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;color:var(--text-muted)}
 .mb-count-select{width:auto;padding:6px 10px;font-size:12px}
+.mb-list{display:flex;flex-direction:column;gap:9px}
+.bcard{background:var(--surface);border-radius:14px;padding:12px 13px;box-shadow:var(--shadow-sm);display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:.15s}
+.bcard:hover{box-shadow:var(--shadow)}
+.bcard-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.bcard-body{flex:1;min-width:0}
+.bcard-time{font-size:13px;font-weight:700;color:var(--text)}
+.bcard-date{font-size:10.5px;color:var(--text-faint)}
+.bcard-room{font-size:12.5px;font-weight:600;color:var(--primary);margin-top:5px}
+.bcard-title{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.bcard-side{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end}
+.bcard-status{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
 .tab{padding:8px 15px;border-radius:50px;font-size:12.5px;font-weight:500;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);transition:.15s}
 .tab.on{background:var(--primary);color:#fff;border-color:var(--primary)}.tab:active{transform:scale(.95)}
 
@@ -1139,18 +1150,26 @@ function MyBookings({bookings,openDetail,checkIn,user}){
           {[5,10,15,20,50,100].map(n=><option key={n} value={n}>แสดง {n}</option>)}
         </select>
       </div>
-      <div className="card pad">
+      <div className="mb-list">
         {show.length?show.map(b=>{
           const r=ROOM(b.room),canCheck=b.status==='in-use'&&!b.checkedIn;
-          return(<div className="li" key={b.id}>
-            <div className="li-time">{b.s} - {b.e}<small>{thShort(b.date)}</small></div>
-            <div style={{width:38,height:38,borderRadius:9,background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',flexShrink:0}}><Icon name="room" size={17}/></div>
-            <div className="li-body" onClick={()=>openDetail(b)} style={{cursor:'pointer'}}><div className="li-title">{r.name} · {b.title}</div><div className="li-sub">{b.att} คน{b.extras&&b.extras.length?' · ⚡ ขอ IT '+b.extras.length+' รายการ':''}</div></div>
-            {b.checkedIn&&<span className="badge b-green"><Icon name="check" size={12}/>เช็คอินแล้ว</span>}
-            {canCheck&&<button className="btn btn-primary btn-sm" onClick={()=>checkIn(b.id)}><Icon name="check" size={13}/>เช็คอิน</button>}
-            <span className={"badge "+STATUS[b.status].cls}><span className="d"></span>{STATUS[b.status].label}</span>
-          </div>);
-        }):<div className="empty">ไม่มีรายการที่ตรงกับตัวกรอง</div>}
+          return(
+            <div className="bcard" key={b.id} onClick={()=>openDetail(b)}>
+              <div className="bcard-icon" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}><Icon name="room" size={16}/></div>
+              <div className="bcard-body">
+                <div className="bcard-time">{b.s} - {b.e}</div>
+                <div className="bcard-date">{thShort(b.date)}</div>
+                <div className="bcard-room">{r.name}</div>
+                <div className="bcard-title">{b.title}{b.extras&&b.extras.length?' · ⚡ ขอ IT '+b.extras.length+' รายการ':''}</div>
+              </div>
+              <div className="bcard-side">
+                <span className={"bcard-status "+STATUS[b.status].cls}>{STATUS[b.status].label}</span>
+                {b.checkedIn&&<span className="bcard-status b-green" style={{marginTop:5}}><Icon name="check" size={11}/>เช็คอินแล้ว</span>}
+                {canCheck&&<button className="btn btn-primary btn-sm" style={{marginTop:6}} onClick={e=>{e.stopPropagation();checkIn(b.id);}}><Icon name="check" size={12}/>เช็คอิน</button>}
+              </div>
+            </div>
+          );
+        }):<div className="card pad"><div className="empty">ไม่มีรายการที่ตรงกับตัวกรอง</div></div>}
       </div>
     </div>
   );
