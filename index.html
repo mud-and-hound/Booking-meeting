@@ -330,6 +330,15 @@ input,select,textarea{font-family:inherit}
 /* form */
 .form-wrap{max-width:620px;margin:0 auto}
 .form-grid{display:grid;gap:16px}
+.form-compact{padding:14px}
+.field-c{margin-bottom:12px}
+.field-c label{font-size:10.5px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block}
+.inp-c{padding:9px 11px;font-size:12.5px}
+.dt-grid-c{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:7px;margin-bottom:2px}
+.avail-hint-c{font-size:10.5px;color:var(--green-tx);background:var(--green-bg);border-radius:8px;padding:7px 10px;margin-bottom:10px}
+.user-row-c{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--text-muted);margin-bottom:12px}
+.form-actions-c{display:flex;gap:6px}
+.form-actions-c .btn-primary{flex:1}
 .field label{display:block;font-size:12.5px;font-weight:500;margin-bottom:7px;color:var(--text)}
 .field label .req{color:var(--red);margin-left:2px}
 .inp{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13.5px;outline:none;transition:.15s}
@@ -814,41 +823,31 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
   };
   return(
     <div className="form-wrap">
-      <div className="card pad">
-        <div className="form-grid">
-          <div className="field">
-            <label>ชื่อห้องประชุม<span className="req">*</span></label>
-            <select className="inp" value={roomId} onChange={ev=>setRoomId(ev.target.value)}>
-              {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name} ({r.cap} ที่นั่ง)</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>วันที่ & เวลา<span className="req">*</span></label>
-            <div className="time-row" style={{gridTemplateColumns:'1fr 1fr auto'}}>
-              <input className="inp" type="date" value={date} onChange={ev=>setDate(ev.target.value)}/>
-              <input className="inp" type="time" value={s} onChange={ev=>setS(ev.target.value)}/>
-              <span style={{alignSelf:'center',color:'var(--text-faint)'}}>–</span>
-            </div>
-            <input className="inp" type="time" value={e} onChange={ev=>setE(ev.target.value)} style={{marginTop:8}}/>
-          </div>
-          {conflict&&<div className="conflict-warn"><Icon name="warn" size={16}/><span>ช่วง {s}-{e} ของ {ROOM(roomId).name} ชนกับการจองอื่น เลือกช่วงที่ว่างด้านล่างได้เลย</span></div>}
-          <div className="gap-help">
-            <div className="gh-title"><Icon name="checkcircle" size={14}/>ช่วงที่ว่างของ {ROOM(roomId).name} วันที่ {thShort(date)}</div>
-            {gaps.length?<div className="chips">{gaps.map((g,i)=><button key={i} className="gap-chip" onClick={()=>{setS(g.s);setE(g.e);}}>{g.s} - {g.e}</button>)}</div>:<div style={{fontSize:12,color:'var(--text-faint)'}}>วันนี้เต็มทั้งวันแล้ว</div>}
-          </div>
-          <div className="field">
-            <label>หัวข้อการประชุม</label>
-            <input className="inp" placeholder="เช่น Weekly Team Meeting" value={title} onChange={ev=>setTitle(ev.target.value)}/>
-          </div>
-          <div className="field">
-            <label>ผู้จอง (อัตโนมัติจากสมาชิก)</label>
-            <div className="auto-field"><div className="avatar" style={{width:30,height:30,fontSize:12}}>{user.nick[0]}</div><div><div style={{fontSize:13,fontWeight:500}}>{user.name} ({user.nick})</div><div style={{fontSize:11,color:'var(--text-muted)'}}>{user.dept}{user.phone?' · '+user.phone:''}</div></div></div>
-          </div>
-          <div className="form-actions form-actions-sm">
-            <button className="btn btn-primary btn-xs" onClick={()=>submit('confirmed')}><Icon name="check" size={13}/>ยืนยัน</button>
-            <button className="btn btn-ghost btn-xs" onClick={()=>submit('draft')}><Icon name="save" size={12}/>ร่าง</button>
-            <button className="btn btn-ghost btn-xs" onClick={()=>go('home')}><Icon name="x" size={12}/>ยกเลิก</button>
-          </div>
+      <div className="card pad form-compact">
+        <div className="field-c">
+          <label>ห้องประชุม</label>
+          <select className="inp inp-c" value={roomId} onChange={ev=>setRoomId(ev.target.value)}>
+            {ROOMS.map(r=><option key={r.id} value={r.id}>{r.name} ({r.cap} ที่นั่ง)</option>)}
+          </select>
+        </div>
+        <div className="dt-grid-c">
+          <div className="field-c"><label>วันที่</label><input className="inp inp-c" type="date" value={date} onChange={ev=>setDate(ev.target.value)}/></div>
+          <div className="field-c"><label>เริ่ม</label><input className="inp inp-c" type="time" value={s} onChange={ev=>setS(ev.target.value)}/></div>
+          <div className="field-c"><label>สิ้นสุด</label><input className="inp inp-c" type="time" value={e} onChange={ev=>setE(ev.target.value)}/></div>
+        </div>
+        {conflict?
+          <div className="conflict-warn" style={{fontSize:11,padding:'7px 10px',marginBottom:10}}><Icon name="warn" size={14}/><span>ช่วงนี้ชนกับการจองอื่น เลือกช่วงว่างด้านล่าง</span></div>
+        :<div className="avail-hint-c">✓ ว่างช่วง {gaps.length?gaps.map(g=>g.s+'-'+g.e).join(', '):'ไม่มีช่วงว่างวันนี้'}</div>}
+        {gaps.length>0&&<div className="chips" style={{marginBottom:10}}>{gaps.slice(0,4).map((g,i)=><button key={i} className="gap-chip" style={{fontSize:10.5,padding:'5px 9px'}} onClick={()=>{setS(g.s);setE(g.e);}}>{g.s}-{g.e}</button>)}</div>}
+        <input className="inp inp-c" placeholder="หัวข้อการประชุม" value={title} onChange={ev=>setTitle(ev.target.value)} style={{marginBottom:10}}/>
+        <div className="user-row-c">
+          <div className="avatar" style={{width:20,height:20,fontSize:9.5}}>{user.nick[0]}</div>
+          <span>{user.name} ({user.nick}) · {user.dept}</span>
+        </div>
+        <div className="form-actions-c">
+          <button className="btn btn-primary" style={{padding:9,fontSize:11.5}} onClick={()=>submit('confirmed')}><Icon name="check" size={13}/>ยืนยัน</button>
+          <button className="btn btn-ghost" style={{padding:'9px 12px',fontSize:11.5}} onClick={()=>submit('draft')}>ร่าง</button>
+          <button className="btn btn-ghost" style={{padding:'9px 12px',fontSize:11.5}} onClick={()=>go('home')}><Icon name="x" size={13}/></button>
         </div>
       </div>
     </div>
