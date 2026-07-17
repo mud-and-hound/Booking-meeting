@@ -371,6 +371,22 @@ select.inp{cursor:pointer}
 .modal{background:var(--surface);border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:pop .22s}
 @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 .modal-gfx{height:155px;position:relative;display:flex;align-items:center;justify-content:center}
+.ticket-modal{position:relative;overflow:visible!important}
+.ticket-head{border-radius:18px 18px 0 0;padding:22px 22px 20px;color:#fff}
+.ticket-head-label{font-size:10px;opacity:.8;letter-spacing:1.5px;font-weight:600}
+.ticket-head-room{font-size:22px;font-weight:800;margin-top:5px}
+.ticket-head-date{font-size:12.5px;opacity:.9;margin-top:3px}
+.ticket-perf{position:relative;height:0}
+.ticket-perf span{position:absolute;top:-9px;width:18px;height:18px;background:var(--bg);border-radius:50%}
+.ticket-perf span:first-child{left:-9px}
+.ticket-perf span:last-child{right:-9px}
+.ticket-perf::after{content:'';position:absolute;left:9px;right:9px;top:-1px;border-top:2px dashed var(--border-strong)}
+.ticket-body{padding:20px}
+.ticket-row2{display:flex;justify-content:space-between;margin-bottom:16px}
+.ticket-sub{font-size:10.5px;color:var(--text-faint)}
+.ticket-val{font-size:16px;font-weight:700;color:var(--text);margin-top:2px}
+.ticket-title-box{border-top:1px solid var(--border);padding-top:13px;margin-bottom:6px}
+.ticket-foot{font-size:11.5px;color:var(--text-faint);margin-top:9px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
 .modal-x{position:absolute;top:13px;right:13px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;z-index:3}
 .modal-x:hover{background:rgba(255,255,255,.32)}
 .detail-line{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
@@ -1389,18 +1405,24 @@ function BookingDetail({b,close,cancel,checkIn,user,onEdit}){
   const canManage=user.isAdmin||b.owner===user.id;
   const canCheck=b.status==='in-use'&&!b.checkedIn;
   return(<div className="overlay" onClick={close}>
-    <div className="modal" onClick={e=>e.stopPropagation()}>
-      <div className="modal-gfx" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}>
-        <button className="modal-x" onClick={close}><Icon name="x" size={18}/></button>
-        <svg width="160" height="80" viewBox="0 0 118 60" fill="none" style={{opacity:.95}}><rect x="14" y="40" width="90" height="9" rx="4.5" fill="rgba(255,255,255,.92)"/><circle cx="28" cy="34" r="5" fill="rgba(255,255,255,.85)"/><circle cx="46" cy="32" r="5" fill="rgba(255,255,255,.85)"/><circle cx="72" cy="32" r="5" fill="rgba(255,255,255,.85)"/><circle cx="90" cy="34" r="5" fill="rgba(255,255,255,.85)"/><rect x="40" y="8" width="38" height="20" rx="3" fill="rgba(255,255,255,.25)" stroke="rgba(255,255,255,.7)" strokeWidth="1.5"/></svg>
+    <div className="modal ticket-modal" onClick={e=>e.stopPropagation()}>
+      <button className="modal-x" onClick={close}><Icon name="x" size={17}/></button>
+      <div className="ticket-head" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}>
+        <div className="ticket-head-label">MEETING PASS</div>
+        <div className="ticket-head-room">{r.name}</div>
+        <div className="ticket-head-date">{thFull(b.date)}</div>
       </div>
-      <div style={{padding:'18px 20px'}}>
-        <div className="row-between" style={{marginBottom:14}}><div style={{fontWeight:600,fontSize:17}}>{r.name}</div><span className={"badge "+st.cls}><span className="d"></span>{st.label}</span></div>
-        <div className="detail-line"><Icon name="calendar" size={17}/><span className="dl-label">วันที่</span><b style={{fontWeight:500}}>{thFull(b.date)}</b></div>
-        <div className="detail-line"><Icon name="clock" size={17}/><span className="dl-label">เวลา</span><b style={{fontWeight:500}}>{b.s} - {b.e} ({durText(b.s,b.e)})</b></div>
-        <div className="detail-line"><Icon name="users" size={17}/><span className="dl-label">ผู้เข้าร่วม</span><b style={{fontWeight:500}}>{b.att} คน</b></div>
-        <div className="detail-line"><Icon name="note" size={17}/><span className="dl-label">หัวข้อ</span><b style={{fontWeight:500}}>{b.title}</b></div>
-        <div className="detail-line"><Icon name="user" size={17}/><span className="dl-label">ผู้จอง</span><b style={{fontWeight:500}}>{b.by}</b></div>
+      <div className="ticket-perf"><span></span><span></span></div>
+      <div className="ticket-body">
+        <div className="ticket-row2">
+          <div><div className="ticket-sub">เวลา</div><div className="ticket-val">{b.s} - {b.e}</div></div>
+          <div style={{textAlign:'right'}}><div className="ticket-sub">ผู้เข้าร่วม</div><div className="ticket-val">{b.att} คน</div></div>
+        </div>
+        <div className="ticket-title-box">
+          <div className="ticket-sub">หัวข้อ</div>
+          <div className="ticket-val" style={{fontSize:13}}>{b.title}</div>
+        </div>
+        <div className="ticket-foot">จองโดย {b.by} · <span className={"badge "+st.cls} style={{marginLeft:2}}><span className="d"></span>{st.label}</span></div>
 
         {canCheck&&canManage&&<button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>{checkIn(b.id);close();}}><Icon name="checkcircle" size={17}/>เช็คอินเข้าห้องประชุม</button>}
         {b.checkedIn&&<div className="checkin-bar" style={{marginTop:14,marginBottom:0,background:'var(--green-bg)',borderColor:'var(--green)'}}><Icon name="checkcircle" size={18}/><span style={{fontSize:13,fontWeight:500,color:'var(--green-tx)'}}>เช็คอินเรียบร้อยแล้ว</span></div>}
