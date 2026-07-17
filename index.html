@@ -481,7 +481,7 @@ select.inp{cursor:pointer}
 .saving-box .stext{font-size:13.5px;color:var(--text);font-weight:500}
 
 /* ===== success pop (ติ๊กถูกเขียว มินิมอล เฟดเข้า-ออก) ===== */
-.success-pop{position:fixed;inset:0;z-index:1100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;animation:successFade 1.5s ease forwards}
+.success-pop{position:fixed;inset:0;z-index:1100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;animation:successFade 1.5s ease forwards;background:rgba(15,23,42,.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .success-ring{width:82px;height:82px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;color:var(--green-tx)}
 .success-pop .smsg{font-size:14px;font-weight:600;color:var(--text);background:var(--surface);padding:8px 18px;border-radius:22px;border:1px solid var(--border);box-shadow:var(--shadow)}
 @keyframes successFade{0%{opacity:0;transform:scale(.92)}14%{opacity:1;transform:scale(1)}82%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
