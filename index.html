@@ -647,6 +647,14 @@ const ACTIVE=['confirmed','in-use','pending'];
 
 /* ====== HELPERS ====== */
 const t2m=t=>{const[h,m]=t.split(':').map(Number);return h*60+m;};
+// สถานะที่ควรแสดงผลจริง ณ ตอนนี้ — ถ้ายืนยัน/รอ และเวลาซ้อนทับกับตอนนี้พอดี ให้ถือว่า "กำลังใช้งาน" (เหมือนตรรกะในปฏิทิน) แม้ field จริงจะยังเป็น confirmed อยู่ก็ตาม ไม่แก้ข้อมูลจริง แค่ปรับการแสดงผลให้สอดคล้องกันทุกหน้า
+function effectiveStatus(b,nowMs){
+  if(['confirmed','pending'].includes(b.status)&&b.date===TODAY){
+    const nowMin=new Date(nowMs).getHours()*60+new Date(nowMs).getMinutes();
+    if(t2m(b.s)<=nowMin&&t2m(b.e)>=nowMin) return 'in-use';
+  }
+  return b.status;
+}
 const m2t=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 const overlap=(s1,e1,s2,e2)=>t2m(s1)<t2m(e2)&&t2m(s2)<t2m(e1);
 const durText=(s,e)=>{let d=t2m(e)-t2m(s);if(d<=0)return'—';const h=Math.floor(d/60),m=d%60;return(h?h+' ชม. ':'')+(m?m+' นาที':(h?'':'0 นาที'));};
@@ -1133,7 +1141,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
 }
 
 /* ====== MY BOOKINGS ====== */
-function MyBookings({bookings,openDetail,checkIn,user}){
+function MyBookings({bookings,openDetail,checkIn,user,now}){
   const [filter,setFilter]=useState('all');
   const [search,setSearch]=useState('');
   const [fDate,setFDate]=useState('');
@@ -1142,7 +1150,14 @@ function MyBookings({bookings,openDetail,checkIn,user}){
   const F={all:'ทั้งหมด',upcoming:'กำลังจะมาถึง',inuse:'กำลังใช้งาน',draft:'ร่าง',cancelled:'ยกเลิก'};
 
   const mine=bookings.filter(b=>b.owner===user.id);
-  const byStatus=mine.filter(b=>filter==='all'?true:filter==='upcoming'?['confirmed','pending'].includes(b.status):filter==='inuse'?b.status==='in-use':filter==='draft'?b.status==='draft':['cancelled','released'].includes(b.status));
+  const byStatus=mine.filter(b=>{
+    const es=effectiveStatus(b,now); // สถานะที่แสดงจริง (สอดคล้องกับปฏิทิน)
+    if(filter==='all')return true;
+    if(filter==='upcoming')return ['confirmed','pending'].includes(b.status)&&es!=='in-use';
+    if(filter==='inuse')return es==='in-use';
+    if(filter==='draft')return b.status==='draft';
+    return ['cancelled','released'].includes(b.status);
+  });
   const q=search.trim().toLowerCase();
   const filtered=byStatus
     .filter(b=>!q||b.title.toLowerCase().includes(q)||ROOM(b.room).name.toLowerCase().includes(q))
@@ -1171,6 +1186,7 @@ function MyBookings({bookings,openDetail,checkIn,user}){
       <div className="mb-list">
         {show.length?show.map(b=>{
           const r=ROOM(b.room),canCheck=b.status==='in-use'&&!b.checkedIn;
+          const es=effectiveStatus(b,now);
           return(
             <div className="bcard" key={b.id} onClick={()=>openDetail(b)}>
               <div className="bcard-hour" style={{background:`linear-gradient(135deg,${r.g[0]},${r.g[1]})`}}>
@@ -1183,7 +1199,7 @@ function MyBookings({bookings,openDetail,checkIn,user}){
                 <div className="bcard-meta">{thShort(b.date)} · {b.s}-{b.e}{b.extras&&b.extras.length?' · ⚡ ขอ IT '+b.extras.length+' รายการ':''}</div>
               </div>
               <div className="bcard-side">
-                <span className={"bcard-status "+STATUS[b.status].cls}>{STATUS[b.status].label}</span>
+                <span className={"bcard-status "+STATUS[es].cls}>{STATUS[es].label}</span>
                 {b.checkedIn&&<span className="bcard-status b-green" style={{marginTop:5}}><Icon name="check" size={11}/>เช็คอินแล้ว</span>}
                 {canCheck&&<button className="btn btn-primary btn-sm" style={{marginTop:6}} onClick={e=>{e.stopPropagation();checkIn(b.id);}}><Icon name="check" size={12}/>เช็คอิน</button>}
               </div>
@@ -1408,8 +1424,8 @@ function EditModal({b,bookings,close,save,toast}){
 }
 
 /* ====== BOOKING DETAIL ====== */
-function BookingDetail({b,close,cancel,checkIn,user,onEdit}){
-  const r=ROOM(b.room),st=STATUS[b.status];
+function BookingDetail({b,close,cancel,checkIn,user,onEdit,now}){
+  const r=ROOM(b.room),st=STATUS[effectiveStatus(b,now)];
   const canManage=user.isAdmin||b.owner===user.id;
   const canCheck=b.status==='in-use'&&!b.checkedIn;
   return(<div className="overlay" onClick={close}>
@@ -1934,7 +1950,7 @@ function App(){
           {page==='form'&&<BookingForm key={JSON.stringify(prefill)} bookings={bookings} addBooking={addBooking} toast={toast} user={user} go={go} prefill={prefill} clearPrefill={()=>setPrefill({})}/>}
           {/* API AI — หน้า ChatBot ถอดออกชั่วคราว (ดู AI_Module.js) */}
           {page==='calendar'&&<CalendarView bookings={bookings} openDetail={setDetail} openForm={openForm} cursor={cursor} setCursor={setCursor}/>}
-          {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user}/>}
+          {page==='mine'&&<MyBookings bookings={bookings} openDetail={setDetail} checkIn={checkIn} user={user} now={now}/>}
           {page==='rooms'&&<RoomsPage bookings={bookings} go={go} openForm={openForm}/>}
           {page==='holidays'&&<CompanyHolidaysPage/>}
           {page==='manage'&&<RoomsAdmin user={user} bookings={bookings} toast={toast} reload={reload}/>}
@@ -1944,7 +1960,7 @@ function App(){
         </div>
       </div>
       <MobileNav page={page} go={go}/>
-      {detail&&<BookingDetail b={bookings.find(x=>x.id===detail.id)||detail} close={()=>setDetail(null)} cancel={cancelBooking} checkIn={checkIn} user={user} onEdit={b=>{setDetail(null);setEditing(b);}}/>}
+      {detail&&<BookingDetail b={bookings.find(x=>x.id===detail.id)||detail} close={()=>setDetail(null)} cancel={cancelBooking} checkIn={checkIn} user={user} onEdit={b=>{setDetail(null);setEditing(b);}} now={now}/>}
       {editing&&<EditModal b={editing} bookings={bookings} close={()=>setEditing(null)} save={editBooking} toast={toast}/>}
       {showProfile&&<ProfileModal user={user} setUser={setUser} close={()=>setShowProfile(false)} toast={toast} logout={logout}/>}
       {showMobileMenu&&<MobileDrawer page={page} go={go} user={user} openProfile={()=>setShowProfile(true)} close={()=>setShowMobileMenu(false)} logout={logout}/>}
