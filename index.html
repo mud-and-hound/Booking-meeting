@@ -254,7 +254,8 @@ input,select,textarea{font-family:inherit}
 .sheet-weekhdr{font-size:11px;color:var(--text-faint);font-weight:500;padding:9px 6px 3px}
 .sheet-row{display:grid;grid-template-columns:104px 1fr;min-height:44px;border-bottom:1px solid var(--border)}
 .sheet-row.holi{background:repeating-linear-gradient(45deg,transparent,transparent 7px,var(--surface-3) 7px,var(--surface-3) 14px)}
-.sheet-day{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:0 9px;border-right:1px solid var(--border)}
+.sheet-row.holi .sheet-day{background:var(--surface-3)}
+.sheet-day{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:0 9px;border-right:1px solid var(--border);position:sticky;left:0;z-index:2;background:var(--surface)}
 .sheet-day small{color:var(--text-faint);font-weight:400}.sheet-day.today{color:var(--primary)}
 .sheet-track{position:relative}
 .sheet-grid{position:absolute;inset:0;display:grid}.sheet-grid span{border-left:1px solid var(--border)}
@@ -636,7 +637,7 @@ const holidayOf=d=>COMPANY_HOLIDAYS.find(h=>h.date===d);
 let _bid=0; // ตัวนับ booking id ชั่วคราว (optimistic ก่อน reload จาก sheet)
 
 const STATUS={
-  confirmed:{label:'จองแล้ว',cls:'b-green',bar:'var(--green)'},
+  confirmed:{label:'ยืนยันแล้ว',cls:'b-green',bar:'var(--green)'},
   'in-use':{label:'กำลังใช้งาน',cls:'b-info',bar:'var(--info)'},
   pending:{label:'รออนุมัติ',cls:'b-amber',bar:'var(--amber)'},
   cancelled:{label:'ยกเลิก',cls:'b-red',bar:'var(--red)'},
@@ -861,7 +862,7 @@ function BookingForm({bookings,addBooking,toast,user,go,prefill,clearPrefill}){
           <div className="field-c"><label>สิ้นสุด</label><input className="inp inp-c" type="time" value={e} onChange={ev=>setE(ev.target.value)}/></div>
         </div>
         {conflict?
-          <div className="conflict-warn" style={{fontSize:11,padding:'7px 10px',marginBottom:10}}><Icon name="warn" size={14}/><span>ไม่สามารถจองช่วงเวลานี้ได้ เนื่องจากมีรายการจองอยู่แล้ว</span></div>
+          <div className="conflict-warn" style={{fontSize:11,padding:'7px 10px',marginBottom:10}}><Icon name="warn" size={14}/><span>ช่วงนี้ชนกับการจองอื่น เลือกช่วงว่างด้านล่าง</span></div>
         :<div className="avail-hint-c">✓ ว่างช่วง {gaps.length?gaps.map(g=>g.s+'-'+g.e).join(', '):'ไม่มีช่วงว่างวันนี้'}</div>}
         {gaps.length>0&&<div className="chips" style={{marginBottom:10}}>{gaps.slice(0,4).map((g,i)=><button key={i} className="gap-chip" style={{fontSize:10.5,padding:'5px 9px'}} onClick={()=>{setS(g.s);setE(g.e);}}>{g.s}-{g.e}</button>)}</div>}
         <input className="inp inp-c" placeholder="หัวข้อการประชุม" value={title} onChange={ev=>setTitle(ev.target.value)} style={{marginBottom:10}}/>
@@ -964,7 +965,7 @@ function CalendarView({bookings,openDetail,openForm,cursor,setCursor}){
         </div>
         <div className="sheet"><div className="sheet-inner">
           <div className="sheet-head" style={{top:toolbarH+roomRowH}}>
-            <div style={{fontSize:11.5,fontWeight:600,color:'var(--text-muted)',display:'flex',alignItems:'center',padding:'0 9px'}}>วันที่ / เวลา</div>
+            <div className="sheet-day" style={{fontSize:11.5,fontWeight:600,color:'var(--text-muted)',padding:'0 9px'}}>วันที่ / เวลา</div>
             <div className="sheet-hours" style={{display:'grid',gridTemplateColumns:`repeat(${shCols.length},1fr)`}}>{shCols.map(h=><span key={h}>{String(h).padStart(2,'0')}:00</span>)}</div>
           </div>
           {weekRows.map((wk,wi)=>(
