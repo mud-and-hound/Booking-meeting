@@ -1279,9 +1279,17 @@ function ReportsPage({bookings}){
     return {id:r.id, name:r.name, color:r.g[0], count:rb.length, hours:Math.round(hrs*10)/10};
   }).sort((a,b)=>b.count-a.count);
   const totalRoomBookings = perRoom.reduce((s,r)=>s+r.count,0);
-  const donut = totalRoomBookings>0
-    ? perRoom.filter(r=>r.count>0).map(r=>({label:r.name, value:Math.round(r.count/totalRoomBookings*100), color:r.color}))
-    : [];
+  const donut = (() => {
+    const rooms = perRoom.filter(r=>r.count>0);
+    if(!rooms.length || totalRoomBookings===0) return [];
+    const raw = rooms.map(r=>r.count/totalRoomBookings*100);
+    const rounded = raw.map(v=>Math.floor(v));
+    let remainder = 100 - rounded.reduce((s,v)=>s+v,0);
+    // แจกเปอร์เซ็นต์ที่เหลือจากการปัดเศษให้ห้องที่มีทศนิยมมากสุดก่อน (ผลรวมจะเป็น 100% เป๊ะเสมอ)
+    const order = raw.map((v,i)=>({i,frac:v-rounded[i]})).sort((a,b)=>b.frac-a.frac);
+    for(let k=0;k<remainder;k++) rounded[order[k].i]++;
+    return rooms.map((r,i)=>({label:r.name, value:rounded[i], color:r.color}));
+  })();
 
   // การจองรายเดือน (6 เดือนล่าสุด นับจากวันที่จองจริง)
   const monthsList=[];
